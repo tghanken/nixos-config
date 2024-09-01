@@ -138,8 +138,8 @@
 
     # set some aliases, feel free to add more or remove some
     shellAliases = {
-      os-build = "nixos-rebuild build";
-      os-switch = "sudo nixos-rebuild switch";
+      osbuild = "nixos-rebuild build";
+      osswitch = "sudo nixos-rebuild switch";
     };
   };
 
