@@ -20,6 +20,7 @@
         system = "x86_64-linux";
         modules = [
           ./machines/nixos-thinkpad/configuration.nix
+          ./common/common.nix
 
           # make home-manager as a module of nixos
           # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
@@ -28,7 +29,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
 
-            home-manager.users.tghanken = import ./common/home.nix;
+            home-manager.users.tghanken = import ./home-manager/home.nix;
 
             # Optionally, use home-manager.extraSpecialArgs to pass arguments to home.nix
           }
