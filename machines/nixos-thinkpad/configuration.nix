@@ -10,6 +10,7 @@
       ./hardware-configuration.nix
 
       # Include any additional apps desired
+      ../../apps/jellyfin.nix
       ../../apps/jetbrains.nix
       ../../apps/steam.nix
     ];
