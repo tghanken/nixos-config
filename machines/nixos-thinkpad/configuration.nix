@@ -10,6 +10,7 @@
       ./hardware-configuration.nix
 
       # Include any additional apps desired
+      ../../apps/jetbrains.nix
       ../../apps/steam.nix
     ];
 
