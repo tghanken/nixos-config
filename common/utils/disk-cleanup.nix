@@ -1,5 +1,3 @@
-{ lib, pkgs, ... }:
-
 {
   # Limit the number of generations to keep
   boot.loader.systemd-boot.configurationLimit = 10;

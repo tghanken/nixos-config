@@ -75,6 +75,7 @@
 
     # productivity
     hugo # static site generator
+    firefox
     glow # markdown previewer in terminal
     vscode
 
