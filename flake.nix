@@ -33,6 +33,14 @@
           }
 
           # Setup ZFS drives with disko
+          # Install for the first time with the command:
+          # `sudo nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+          #   run 'github:nix-community/disko#disko-install' -- \
+          #   --flake '.#inwin-tower' --write-efi-boot-entries \
+          #   --disk boot /dev/nvme0n1 \
+          #   --disk f1 /dev/nvme1n1 \
+          #   --disk f2 /dev/nvme2n1 \
+          #   --disk bulk1 /dev/sda`
           disko.nixosModules.disko
           {
             disko.devices = import ./machines/inwin-tower/devices.nix;
