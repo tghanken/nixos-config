@@ -79,6 +79,7 @@
     firefox
     glow # markdown previewer in terminal
     vscode
+    gh
 
     btop  # replacement of htop/nmon
     iotop # io monitoring
