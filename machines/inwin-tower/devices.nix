@@ -101,6 +101,7 @@
       mode = {
         topology = {
           type = "topology";
+          cache = [];
           vdev = [
             {
               members = [ "boot" ];
@@ -142,6 +143,7 @@
       mode = {
         topology = {
           type = "topology";
+          cache = [];
           vdev = [
             {
               members = [ "f1" "f2" ];
@@ -174,6 +176,7 @@
       mode = {
         topology = {
           type = "topology";
+          cache = [];
           vdev = [
             {
               members = [ "bulk1" ];
