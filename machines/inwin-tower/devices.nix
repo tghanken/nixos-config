@@ -103,13 +103,13 @@
           ];
         };
       };
-
       rootFsOptions = {
         ashift = "12";
         xattr = "sa";
         compression = "lz4";
         atime = "off";
         recordsize = "64K";
+        "com.sun:auto-snapshot" = "true";
       };
       mountpoint = "/";
       datasets = {
@@ -124,6 +124,11 @@
         home = {
           type = "zfs_fs";
           mountpoint = "/home";
+        };
+        reserved = {
+          type = "zfs_fs";
+          options.refreservation = "10G";
+          options.mountpoint = "none";
         };
       };
     };
