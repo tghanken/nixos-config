@@ -98,7 +98,6 @@
           type = "topology";
           vdev = [
             {
-              # mode = "mirror";
               members = [ "boot" ];
             }
           ];
@@ -114,20 +113,17 @@
       };
       mountpoint = "/";
       datasets = {
-        # See examples/zfs.nix for more comprehensive usage.
-        root = {
-          type = "zfs_fs";
-          mountpoint = "/zfs_fs";
-          options."com.sun:auto-snapshot" = "true";
-        };
         nix = {
-
+          type = "zfs_fs";
+          mountpoint = "/nix";
         };
         var = {
-
+          type = "zfs_fs";
+          mountpoint = "/var";
         };
         home = {
-
+          type = "zfs_fs";
+          mountpoint = "/home";
         };
       };
     };

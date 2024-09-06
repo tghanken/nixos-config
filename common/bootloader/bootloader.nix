@@ -1,4 +1,11 @@
 {
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.grub = {
+    enable = true;
+    configurationLimit = 10;
+    zfsSupport = true;
+    efiSupport = true;
+    mirroredBoots = [
+      { devices = [ "nodev"]; path = "/boot"; }
+    ];
+  };
 }
