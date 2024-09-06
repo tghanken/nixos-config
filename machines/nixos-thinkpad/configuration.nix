@@ -16,6 +16,31 @@
 
   networking.hostName = "nixos-thinkpad"; # Define your hostname.
 
+  # Enable OpenGL
+  hardware.opengl = {
+    enable = true;
+  };
+
+  # Load nvidia driver for Xorg and Wayland
+  services.xserver.videoDrivers = ["nvidia"];
+
+  hardware.nvidia = {
+    modesetting.enable = true;
+    powerManagement.enable = false;
+    powerManagement.finegrained = false;
+    open = false;
+    nvidiaSettings = true;
+    package = config.boot.kernelPackages.nvidiaPackages.production;
+    prime = {
+      sync.enable = true;
+
+      # Make sure to use the correct Bus ID values for your system!
+      # Run sudo lshw -c display to get values
+      intelBusId = "PCI:0:2:0";
+      nvidiaBusId = "PCI:1:0:0";
+    };
+  };
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tghanken = {
     isNormalUser = true;
