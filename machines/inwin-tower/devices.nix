@@ -6,6 +6,11 @@
       content = {
         type = "gpt";
         partitions = {
+          MBR = {
+            type = "EF02";
+            size = "1M";
+            priority = 1;
+          };
           ESP = {
             size = "64M";
             type = "EF00";
@@ -73,7 +78,7 @@
         };
       };
     };
-    backup = {
+    bulk1 = {
       type = "disk";
       device = "/dev/sda";
       content = {
@@ -124,6 +129,70 @@
         home = {
           type = "zfs_fs";
           mountpoint = "/home";
+        };
+        reserved = {
+          type = "zfs_fs";
+          options.refreservation = "10G";
+          options.mountpoint = "none";
+        };
+      };
+    };
+    zflash = {
+      type = "zpool";
+      mode = {
+        topology = {
+          type = "topology";
+          vdev = [
+            {
+              members = [ "f1" "f2" ];
+            }
+          ];
+        };
+      };
+      rootFsOptions = {
+        ashift = "12";
+        xattr = "sa";
+        compression = "lz4";
+        atime = "off";
+        recordsize = "64K";
+        "com.sun:auto-snapshot" = "true";
+      };
+      datasets = {
+        steam = {
+          type = "zfs_fs";
+          mountpoint = "/mnt/steam";
+        };
+        reserved = {
+          type = "zfs_fs";
+          options.refreservation = "10G";
+          options.mountpoint = "none";
+        };
+      };
+    };
+    zbulk = {
+      type = "zpool";
+      mode = {
+        topology = {
+          type = "topology";
+          vdev = [
+            {
+              members = [ "bulk1" ];
+            }
+          ];
+        };
+      };
+      rootFsOptions = {
+        ashift = "12";
+        xattr = "sa";
+        compression = "lz4";
+        atime = "off";
+        recordsize = "64K";
+        "com.sun:auto-snapshot" = "true";
+      };
+      datasets = {
+        hyper-backup = {
+          type = "zfs_fs";
+          mountpoint = "/mnt/hyper-backup";
         };
         reserved = {
           type = "zfs_fs";
