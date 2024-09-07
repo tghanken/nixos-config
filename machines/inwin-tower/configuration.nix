@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   imports =
@@ -17,7 +17,10 @@
   networking.hostName = "inwin-tower"; # Define your hostname.
   networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
 
-  boot.loader.efi.canTouchEfiVariables = false;
+  boot.loader = {
+    efi.canTouchEfiVariables = lib.mkForce false;
+    grub.efiSupport = lib.mkForce false;
+  };
 
   # Enable OpenGL
   hardware.opengl = {
