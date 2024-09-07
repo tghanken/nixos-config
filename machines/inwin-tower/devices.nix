@@ -21,13 +21,12 @@
             };
             priority = 2;
           };
-          root = {
+          zfs = {
             end = "-32G";
-              content = {
-                type = "filesystem";
-                format = "ext4";
-                mountpoint = "/";
-              };
+            content = {
+              type = "zfs";
+              pool = "zroot";
+            };
             priority = 3;
           };
           encryptedSwap = {
@@ -99,6 +98,48 @@
     };
   };
   zpool = {
+    zroot = {
+      type = "zpool";
+      mode = {
+        topology = {
+          type = "topology";
+          cache = [];
+          vdev = [
+            {
+              members = [ "boot" ];
+            }
+          ];
+        };
+      };
+      rootFsOptions = {
+        # ashift = "12";
+        xattr = "sa";
+        compression = "lz4";
+        atime = "off";
+        recordsize = "64K";
+        "com.sun:auto-snapshot" = "true";
+      };
+      mountpoint = "/";
+      datasets = {
+        nix = {
+          type = "zfs_fs";
+          mountpoint = "/nix";
+        };
+        var = {
+          type = "zfs_fs";
+          mountpoint = "/var";
+        };
+        home = {
+          type = "zfs_fs";
+          mountpoint = "/home";
+        };
+        reserved = {
+          type = "zfs_fs";
+          options.refreservation = "10G";
+          options.mountpoint = "none";
+        };
+      };
+    };
     zflash = {
       type = "zpool";
       mode = {
@@ -113,6 +154,7 @@
         };
       };
       rootFsOptions = {
+        # ashift = "12";
         xattr = "sa";
         compression = "lz4";
         atime = "off";
@@ -120,18 +162,6 @@
         "com.sun:auto-snapshot" = "true";
       };
       datasets = {
-        nix = {
-          type = "zfs_fs";
-          mountpoint = "/nix";
-        };
-        var = {
-          type = "zfs_fs";
-          mountpoint = "/var";
-        };
-        home = {
-          type = "zfs_fs";
-          mountpoint = "/home";
-        };
         steam = {
           type = "zfs_fs";
           mountpoint = "/mnt/steam";
@@ -157,6 +187,7 @@
         };
       };
       rootFsOptions = {
+        # ashift = "12";
         xattr = "sa";
         compression = "lz4";
         atime = "off";
