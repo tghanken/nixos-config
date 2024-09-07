@@ -6,9 +6,11 @@
 
 {
   imports = [
-    lib.mkForce (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
+    (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
   ];
   networking.hostName = "nixos-usb"; # Define your hostname.
+  boot.loader.grub.enable = lib.mkForce false;
+  networking.networkmanager.enable = lib.mkForce false;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
