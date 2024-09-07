@@ -164,6 +164,7 @@
       datasets = {
         steam = {
           type = "zfs_fs";
+          options.mountpoint = "legacy";
           mountpoint = "/mnt/steam";
         };
         reserved = {
@@ -197,10 +198,12 @@
       datasets = {
         hyper-backup = {
           type = "zfs_fs";
+          options.mountpoint = "legacy";
           mountpoint = "/mnt/hyper-backup";
         };
         repos = {
           type = "zfs_fs";
+          options.mountpoint = "legacy";
           mountpoint = "/mnt/repos";
         };
         reserved = {
