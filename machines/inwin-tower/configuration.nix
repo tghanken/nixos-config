@@ -34,6 +34,13 @@
     package = config.boot.kernelPackages.nvidiaPackages.production;
   };
 
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.tghanken = {
+    isNormalUser = true;
+    description = "Taylor Hanken";
+    extraGroups = [ "networkmanager" "wheel" ];
+  };
+
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave
