@@ -8,4 +8,6 @@
       { devices = [ "nodev"]; path = "/boot"; }
     ];
   };
+
+  boot.loader.efi.canTouchEfiVariables = true;
 }
