@@ -19,13 +19,15 @@
               format = "vfat";
               mountpoint = "/boot";
             };
+            priority = 2;
           };
-          zroot = {
+          zfs = {
             end = "-32G";
             content = {
               type = "zfs";
               pool = "zroot";
             };
+            priority = 3;
           };
           encryptedSwap = {
             size = "1G";
@@ -110,7 +112,7 @@
         };
       };
       rootFsOptions = {
-        ashift = "12";
+        # ashift = "12";
         xattr = "sa";
         compression = "lz4";
         atime = "off";
@@ -152,7 +154,7 @@
         };
       };
       rootFsOptions = {
-        ashift = "12";
+        # ashift = "12";
         xattr = "sa";
         compression = "lz4";
         atime = "off";
@@ -185,7 +187,7 @@
         };
       };
       rootFsOptions = {
-        ashift = "12";
+        # ashift = "12";
         xattr = "sa";
         compression = "lz4";
         atime = "off";
