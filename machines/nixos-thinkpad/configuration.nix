@@ -15,6 +15,7 @@
     ];
 
   networking.hostName = "nixos-thinkpad"; # Define your hostname.
+  networking.hostId = "a0d787a6"; # Generate using `head -c 8 /etc/machine-id`
 
   # Enable OpenGL
   hardware.opengl = {
