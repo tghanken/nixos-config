@@ -17,6 +17,8 @@
   networking.hostName = "inwin-tower"; # Define your hostname.
   networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
 
+  boot.loader.efi.canTouchEfiVariables = false;
+
   # Enable OpenGL
   hardware.opengl = {
     enable = true;
