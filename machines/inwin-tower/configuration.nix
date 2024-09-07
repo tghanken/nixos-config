@@ -19,7 +19,10 @@
 
   boot.loader = {
     efi.canTouchEfiVariables = lib.mkForce false;
-    grub.efiSupport = lib.mkForce false;
+    grub = {
+      efiSupport = lib.mkForce false;
+      zfsSupport = lib.mkForce false;
+    };
   };
 
   # Enable OpenGL
