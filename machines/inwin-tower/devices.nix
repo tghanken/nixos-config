@@ -199,6 +199,10 @@
           type = "zfs_fs";
           mountpoint = "/mnt/hyper-backup";
         };
+        repos = {
+          type = "zfs_fs";
+          mountpoint = "/mnt/repos";
+        };
         reserved = {
           type = "zfs_fs";
           options.refreservation = "10G";
