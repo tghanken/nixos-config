@@ -19,11 +19,6 @@
 
   boot.zfs.devNodes = "/dev/disk/by-partlabel";
 
-  # boot.loader = {
-  #   efi.canTouchEfiVariables = lib.mkForce false;
-  #   grub.efiSupport = lib.mkForce false;
-  # };
-
   # Enable OpenGL
   hardware.opengl = {
     enable = true;

@@ -1,5 +1,4 @@
 {
-  # boot.shell_on_fail = true;
   boot.loader = {
     efi = {
       canTouchEfiVariables = true;
