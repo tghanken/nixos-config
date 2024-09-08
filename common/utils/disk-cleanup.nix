@@ -1,7 +1,4 @@
 {
-  # Limit the number of generations to keep
-  boot.loader.systemd-boot.configurationLimit = 10;
-
   # Perform garbage collection daily to maintain low disk usage
   nix.gc = {
     automatic = true;

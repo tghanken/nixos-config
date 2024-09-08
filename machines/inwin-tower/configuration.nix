@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   imports =
@@ -14,10 +14,13 @@
       ../../apps/steam.nix
     ];
 
-  networking.hostName = "nixos-thinkpad"; # Define your hostname.
-  networking.hostId = "a0d787a6"; # Generate using `head -c 8 /etc/machine-id`
+  networking.hostName = "inwin-tower"; # Define your hostname.
+  networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
 
-  boot.zfs.devNodes = "/dev/disk/by-label";
+  boot.loader = {
+    efi.canTouchEfiVariables = lib.mkForce false;
+    grub.efiSupport = lib.mkForce false;
+  };
 
   # Enable OpenGL
   hardware.opengl = {
@@ -34,14 +37,6 @@
     open = false;
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.production;
-    prime = {
-      sync.enable = true;
-
-      # Make sure to use the correct Bus ID values for your system!
-      # Run sudo lshw -c display to get values
-      intelBusId = "PCI:0:2:0";
-      nvidiaBusId = "PCI:1:0:0";
-    };
   };
 
   # This value determines the NixOS release from which the default
