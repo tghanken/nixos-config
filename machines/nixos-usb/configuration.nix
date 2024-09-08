@@ -9,9 +9,13 @@
     (modulesPath + "/installer/cd-dvd/installation-cd-graphical-base.nix")
   ];
   networking.hostName = "nixos-usb"; # Define your hostname.
+
+  # Overrides for graphical base
   boot.loader.grub.enable = lib.mkForce false;
   networking.wireless.enable = lib.mkForce false;
+  hardware.pulseaudio.enable = lib.mkForce false;
 
+  # Prebuild disko
   environment.systemPackages = with pkgs; [
     disko
   ];
