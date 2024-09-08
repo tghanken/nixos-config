@@ -2,7 +2,7 @@
   disk = {
     boot = {
       type = "disk";
-      device = "/dev/nvme0n1";
+      device = "/dev/disk/by-id/nvme-INTEL_SSDPEDMW400G4_CVCQ6453007T400IGN";
       content = {
         type = "gpt";
         partitions = {
@@ -12,7 +12,7 @@
             priority = 1;
           };
           ESP = {
-            size = "64M";
+            size = "256M";
             type = "EF00";
             content = {
               type = "filesystem";
@@ -50,7 +50,7 @@
     };
     f1 = {
       type = "disk";
-      device = "/dev/nvme1n1";
+      device = "/dev/disk/by-id/nvme-CT1000P3SSD8_2320E6D67715";
       content = {
         type = "gpt";
         partitions = {
@@ -66,7 +66,7 @@
     };
     f2 = {
       type = "disk";
-      device = "/dev/nvme2n1";
+      device = "/dev/disk/by-id/nvme-CT1000P3SSD8_2320E6D67656";
       content = {
         type = "gpt";
         partitions = {
@@ -82,7 +82,7 @@
     };
     bulk1 = {
       type = "disk";
-      device = "/dev/sda";
+      device = "/dev/disk/by-id/ata-Hitachi_HUA723020ALA641_YGG3E3LA";
       content = {
         type = "gpt";
         partitions = {
@@ -164,6 +164,7 @@
       datasets = {
         steam = {
           type = "zfs_fs";
+          options.mountpoint = "legacy";
           mountpoint = "/mnt/steam";
         };
         reserved = {
@@ -197,10 +198,12 @@
       datasets = {
         hyper-backup = {
           type = "zfs_fs";
+          options.mountpoint = "legacy";
           mountpoint = "/mnt/hyper-backup";
         };
         repos = {
           type = "zfs_fs";
+          options.mountpoint = "legacy";
           mountpoint = "/mnt/repos";
         };
         reserved = {

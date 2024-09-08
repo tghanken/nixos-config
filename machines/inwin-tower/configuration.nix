@@ -17,12 +17,7 @@
   networking.hostName = "inwin-tower"; # Define your hostname.
   networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
 
-  boot.zfs.devNodes = "/dev/disk/by-partuuid";
-
-  boot.loader = {
-    efi.canTouchEfiVariables = lib.mkForce false;
-    grub.efiSupport = lib.mkForce false;
-  };
+  boot.zfs.devNodes = "/dev/disk/by-partlabel";
 
   # Enable OpenGL
   hardware.opengl = {
