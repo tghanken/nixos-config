@@ -12,6 +12,26 @@
   boot.loader.grub.enable = lib.mkForce false;
   networking.wireless.enable = lib.mkForce false;
 
+  environment.systemPackages = with pkgs; [
+    disko
+  ];
+
+  fonts = {
+    enableDefaultPackages = true;
+    fontDir.enable = true;
+    packages = with pkgs; [ 
+      ubuntu_font_family
+      liberation_ttf
+    ];
+    fontconfig = {
+      defaultFonts = {
+        serif = [  "Liberation Serif" ];
+        sansSerif = [ "Ubuntu" ];
+        monospace = [ "Ubuntu Mono" ];
+      };
+    };
+  };
+
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave
