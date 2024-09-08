@@ -10,7 +10,7 @@
   ];
   networking.hostName = "nixos-usb"; # Define your hostname.
   boot.loader.grub.enable = lib.mkForce false;
-  networking.networkmanager.enable = lib.mkForce false;
+  networking.wireless.enable = lib.mkForce false;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
