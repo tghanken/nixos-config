@@ -12,7 +12,7 @@
             priority = 1;
           };
           ESP = {
-            size = "256M";
+            size = "512M";
             type = "EF00";
             content = {
               type = "filesystem";
@@ -160,11 +160,11 @@
         atime = "off";
         recordsize = "64K";
         "com.sun:auto-snapshot" = "true";
+        mountpoint = "legacy";
       };
       datasets = {
         steam = {
           type = "zfs_fs";
-          options.mountpoint = "legacy";
           mountpoint = "/mnt/steam";
         };
         reserved = {
@@ -194,16 +194,15 @@
         atime = "off";
         recordsize = "64K";
         "com.sun:auto-snapshot" = "true";
+        mountpoint = "legacy";
       };
       datasets = {
         hyper-backup = {
           type = "zfs_fs";
-          options.mountpoint = "legacy";
           mountpoint = "/mnt/hyper-backup";
         };
         repos = {
           type = "zfs_fs";
-          options.mountpoint = "legacy";
           mountpoint = "/mnt/repos";
         };
         reserved = {
