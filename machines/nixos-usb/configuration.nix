@@ -3,12 +3,14 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, lib, modulesPath, ... }:
-
+with config;
 {
   imports = [
     (modulesPath + "/installer/cd-dvd/installation-cd-graphical-base.nix")
   ];
   networking.hostName = "nixos-usb"; # Define your hostname.
+
+  services.tailscale.authKey = "tskey-auth-kUpUwT8ne921CNTRL-xHFfTssLnnZgddFsUiLgqZLxKVSoErMFc";
 
   # Overrides for graphical base
   boot.loader.grub.enable = lib.mkForce false;
