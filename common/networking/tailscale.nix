@@ -1,14 +1,22 @@
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
+with lib;                      
+let
+  cfg = config.services.tailscale;
+in {
+  options.services.tailscale = {
+    authKey = mkOption {
+      type = types.str;
+    };
+  };
 
-{
   # make the tailscale command usable to users
-  environment.systemPackages = [ pkgs.tailscale ];
+  config.environment.systemPackages = [ pkgs.tailscale ];
 
   # enable the tailscale service
-  services.tailscale.enable = true;
+  config.services.tailscale.enable = true;
 
-    # create a oneshot job to authenticate to Tailscale
-  systemd.services.tailscale-autoconnect = {
+  # create a oneshot job to authenticate to Tailscale
+  config.systemd.services.tailscale-autoconnect = {
     description = "Automatic connection to Tailscale";
 
     # make sure tailscale is running before trying to connect to tailscale
@@ -31,7 +39,7 @@
       fi
 
       # otherwise authenticate with tailscale
-      ${tailscale}/bin/tailscale up -authkey tskey-auth-kkcDf3MmA921CNTRL-JMGENEWcfJ4NHsy5dZ3FH4XUvxXk85Xg
+      ${tailscale}/bin/tailscale up -authkey ${cfg.authKey}
     '';
   };
 }

@@ -3,7 +3,7 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
-
+with config;
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -16,6 +16,8 @@
 
   networking.hostName = "nixos-thinkpad"; # Define your hostname.
   networking.hostId = "a0d787a6"; # Generate using `head -c 8 /etc/machine-id`
+
+  services.tailscale.authKey = "tskey-auth-knJSHocuQn11CNTRL-kyer5oNq6ADApVLAVhijCDgEiFYP64nm";
 
   boot.zfs.devNodes = "/dev/disk/by-label";
 

@@ -3,7 +3,7 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, lib, ... }:
-
+with config;
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -16,6 +16,8 @@
 
   networking.hostName = "inwin-tower"; # Define your hostname.
   networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
+
+  services.tailscale.authKey = "tskey-auth-kfMxvmtDkb11CNTRL-zCvVcCMqVt8vAWaYU9qPw8nKJ4wtAn5nE";
 
   boot.zfs.devNodes = "/dev/disk/by-partlabel";
 
