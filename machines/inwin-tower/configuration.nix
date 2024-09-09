@@ -19,6 +19,7 @@ with config;
 
   services.tailscale.authKey = "tskey-auth-kfMxvmtDkb11CNTRL-zCvVcCMqVt8vAWaYU9qPw8nKJ4wtAn5nE";
 
+  boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
   boot.zfs.devNodes = "/dev/disk/by-partlabel";
 
   # Enable OpenGL
