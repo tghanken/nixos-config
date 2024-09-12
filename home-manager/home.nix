@@ -106,6 +106,12 @@
     userEmail = "tghanken@gmail.com";
   };
 
+  programs.direnv = {
+    enable = true;
+    enableBashIntegration = true;
+    nix-direnv.enable = true;
+  };
+
   # starship - an customizable prompt for any shell
   programs.starship = {
     enable = true;
