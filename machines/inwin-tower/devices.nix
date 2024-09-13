@@ -106,7 +106,7 @@
           cache = [];
           vdev = [
             {
-              members = [ "boot" ];
+              members = ["boot"];
             }
           ];
         };
@@ -148,7 +148,7 @@
           cache = [];
           vdev = [
             {
-              members = [ "f1" "f2" ];
+              members = ["f1" "f2"];
             }
           ];
         };
@@ -182,7 +182,7 @@
           cache = [];
           vdev = [
             {
-              members = [ "bulk1" ];
+              members = ["bulk1"];
             }
           ];
         };

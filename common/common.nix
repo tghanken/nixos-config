@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   imports = [
     ./bootloader/bootloader.nix
     ./desktop/desktop.nix
@@ -16,7 +14,7 @@
 
   environment.variables.EDITOR = "nano";
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = ["nix-command" "flakes"];
   environment.systemPackages = with pkgs; [
     git
     nano

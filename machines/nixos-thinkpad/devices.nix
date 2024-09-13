@@ -58,7 +58,7 @@
           cache = [];
           vdev = [
             {
-              members = [ "boot" ];
+              members = ["boot"];
             }
           ];
         };

@@ -1,18 +1,20 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
-
-{ config, pkgs, ... }:
-with config;
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
+  config,
+  pkgs,
+  ...
+}:
+with config; {
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
 
-      # Include any additional apps desired
-      ../../apps/jetbrains.nix
-      ../../apps/steam.nix
-    ];
+    # Include any additional apps desired
+    ../../apps/jetbrains.nix
+    ../../apps/steam.nix
+  ];
 
   networking.hostName = "nixos-thinkpad"; # Define your hostname.
   networking.hostId = "a0d787a6"; # Generate using `head -c 8 /etc/machine-id`
