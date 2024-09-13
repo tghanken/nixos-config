@@ -3,7 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
-    systems.url = "github:nix-systems/default";
     # home-manager, used for managing user configuration
     home-manager = {
       url = "github:nix-community/home-manager/release-24.05";
@@ -13,27 +12,27 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.systems.follows = "systems";
-    };
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
   outputs = inputs @ {
     nixpkgs,
     home-manager,
     disko,
-    flake-utils,
+    flake-parts,
     ...
   }:
-    flake-utils.lib.eachDefaultSystem
-    (
-      system: let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
-      in {
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
+
+      perSystem = {
+        pkgs,
+        system,
+        ...
+      }: {
         formatter = pkgs.alejandra;
+      };
+      flake = {
         nixosConfigurations = {
           inwin-tower = nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
@@ -116,6 +115,6 @@
             ];
           };
         };
-      }
-    );
+      };
+    };
 }
