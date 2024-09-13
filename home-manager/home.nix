@@ -80,6 +80,9 @@
     firefox
     glow # markdown previewer in terminal
     vscode
+    vscode-extensions.jnoortheen.nix-ide
+    vscode-extensions.mhutchie.git-graph
+    graphite-cli
     gh
 
     btop  # replacement of htop/nmon
