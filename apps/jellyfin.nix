@@ -1,8 +1,6 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    vaapiIntel = pkgs.vaapiIntel.override {enableHybridCodec = true;};
   };
   hardware.opengl = {
     enable = true;
@@ -18,16 +16,16 @@
   };
 
   fileSystems."/mnt/jellyfin-media" = {
-    # NFS set to wildcard hostname, readonly, map all users to admin. 
+    # NFS set to wildcard hostname, readonly, map all users to admin.
     device = "pinonnas.myth-chameleon.ts.net:/volume1/media-final";
     fsType = "nfs";
-    options = [ 
+    options = [
       "nfsvers=4.1"
       "ro"
       "x-systemd.automount"
       "noauto"
     ];
- };
+  };
 
   services.jellyfin = {
     enable = true;

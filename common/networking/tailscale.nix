@@ -1,6 +1,10 @@
-{ config, lib, pkgs, ... }:
-with lib;                      
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.services.tailscale;
 in {
   options.services.tailscale = {
@@ -10,7 +14,7 @@ in {
   };
 
   # make the tailscale command usable to users
-  config.environment.systemPackages = [ pkgs.tailscale ];
+  config.environment.systemPackages = [pkgs.tailscale];
 
   # enable the tailscale service
   config.services.tailscale.enable = true;
@@ -20,9 +24,9 @@ in {
     description = "Automatic connection to Tailscale";
 
     # make sure tailscale is running before trying to connect to tailscale
-    after = [ "network-pre.target" "tailscale.service" ];
-    wants = [ "network-pre.target" "tailscale.service" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["network-pre.target" "tailscale.service"];
+    wants = ["network-pre.target" "tailscale.service"];
+    wantedBy = ["multi-user.target"];
 
     # set this service as a oneshot job
     serviceConfig.Type = "oneshot";
