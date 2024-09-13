@@ -28,6 +28,7 @@
         };
       in
   {
+    formatter = pkgs.alejandra;
     nixosConfigurations = {
       inwin-tower = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
