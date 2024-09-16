@@ -43,6 +43,7 @@
       flake = {
         darwinConfigurations = {
           "Taylors-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+            system = "aarch64-darwin";
             modules = [
               ./machines/taylors-macbook-pro/configuration.nix
               ./common/common.nix
