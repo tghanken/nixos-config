@@ -16,6 +16,10 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
@@ -23,6 +27,7 @@
     home-manager,
     disko,
     flake-parts,
+    nix-darwin,
     ...
   }:
     flake-parts.lib.mkFlake {inherit inputs;} {
@@ -36,6 +41,14 @@
         formatter = pkgs.alejandra;
       };
       flake = {
+        darwinConfigurations = {
+          "Taylors-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+            modules = [
+              ./machines/taylors-macbook-pro/configuration.nix
+              ./common/common.nix
+            ];
+          };
+        };
         nixosConfigurations = {
           inwin-tower = nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
