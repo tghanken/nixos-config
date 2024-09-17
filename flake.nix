@@ -44,9 +44,10 @@
         darwinConfigurations = {
           "Taylors-MacBook-Pro" = nix-darwin.lib.darwinSystem {
             system = "aarch64-darwin";
+            specialArgs = {inherit inputs;};
             modules = [
               ./machines/taylors-macbook-pro/configuration.nix
-              ./common/common.nix
+              # ./common/common.nix
             ];
           };
         };

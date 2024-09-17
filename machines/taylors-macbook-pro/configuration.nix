@@ -1,46 +1,28 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
-with config; {
-  imports = [
-  ];
+{ pkgs, inputs, ... }: {
+      # List packages installed in system profile. To search by name, run:
+      # $ nix-env -qaP | grep wget
+      environment.systemPackages =
+        [ pkgs.nano
+        ];
 
-  networking.hostName = "inwin-tower"; # Define your hostname.
-  # networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
+      # Auto upgrade nix package and the daemon service.
+      services.nix-daemon.enable = true;
+      # nix.package = pkgs.nix;
 
-  services.tailscale.authKey = "tskey-auth-kCkdBFzxfY11CNTRL-GeqvTbWb9u6CriZMWdqVs6nxHxe1YSk2";
+      # Necessary for using flakes on this system.
+      nix.settings.experimental-features = "nix-command flakes";
 
-  # boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
-  # boot.zfs.devNodes = "/dev/disk/by-partlabel";
+      # Create /etc/zshrc that loads the nix-darwin environment.
+      programs.zsh.enable = true;  # default shell on catalina
+      # programs.fish.enable = true;
 
-  # # Enable OpenGL
-  # hardware.opengl = {
-  #   enable = true;
-  # };
+      # Set Git commit hash for darwin-version.
+      system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
 
-  # # Load nvidia driver for Xorg and Wayland
-  # services.xserver.videoDrivers = ["nvidia"];
+      # Used for backwards compatibility, please read the changelog before changing.
+      # $ darwin-rebuild changelog
+      system.stateVersion = 5;
 
-  # hardware.nvidia = {
-  #   modesetting.enable = true;
-  #   powerManagement.enable = false;
-  #   powerManagement.finegrained = false;
-  #   open = false;
-  #   nvidiaSettings = true;
-  #   package = config.boot.kernelPackages.nvidiaPackages.production;
-  # };
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "24.05"; # Did you read the comment?
-}
+      # The platform the configuration will be used on.
+      nixpkgs.hostPlatform = "aarch64-darwin";
+    }
