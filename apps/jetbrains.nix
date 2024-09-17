@@ -1,5 +1,9 @@
 {pkgs, ...}: {
-  environment.systemPackages = [pkgs.jetbrains-toolbox];
+  environment.systemPackages = with pkgs; [
+    jetbrains-toolbox
+    rustup
+    cargo
+  ];
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
     SDL
