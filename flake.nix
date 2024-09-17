@@ -48,6 +48,14 @@
             modules = [
               ./machines/taylors-macbook-pro/configuration.nix
               # ./common/common.nix
+
+              home-manager.darwinModules.home-manager
+              {
+                home-manager.useGlobalPkgs = true;
+                home-manager.useUserPackages = true;
+
+                home-manager.users.tghanken = import ./home-manager/home.nix;
+              }
             ];
           };
         };
