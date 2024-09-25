@@ -1,8 +1,12 @@
 {pkgs, ...}: {
   environment.systemPackages = with pkgs; [
     jetbrains-toolbox
+    jetbrains.rust-rover
     rustup
-    cargo
+    clang
+    mold
+    # rustc
+    # cargo
   ];
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
