@@ -16,6 +16,18 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    nix-serve-ng = {
+      url = github:aristanetworks/nix-serve-ng;
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.utils.follows = "flake-utils";
+      inputs.flake-compat.follows = "flake-compat";
+    };
+    flake-utils = {
+      url = "github:numtide/flake-utils";
+    };
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+    };
   };
 
   outputs = inputs @ {
@@ -23,6 +35,7 @@
     home-manager,
     disko,
     flake-parts,
+    nix-serve-ng,
     ...
   }:
     flake-parts.lib.mkFlake {inherit inputs;} {
@@ -40,6 +53,7 @@
           inwin-tower = nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
+              nix-serve-ng.nixosModules.default
               ./machines/inwin-tower/configuration.nix
               ./common/common.nix
 
@@ -71,6 +85,7 @@
           nixos-thinkpad = nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
+              nix-serve-ng.nixosModules.default
               ./machines/nixos-thinkpad/configuration.nix
               ./common/common.nix
 
