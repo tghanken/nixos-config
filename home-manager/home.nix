@@ -80,6 +80,7 @@
     # productivity
     hugo # static site generator
     firefox
+    google-chrome
     glow # markdown previewer in terminal
     vscode
     vscode-extensions.jnoortheen.nix-ide
