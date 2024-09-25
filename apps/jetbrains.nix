@@ -5,8 +5,6 @@
     rustup
     clang
     mold
-    # rustc
-    # cargo
   ];
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
