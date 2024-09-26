@@ -10,7 +10,7 @@
       sshUser = "nixbuilder";
       system = "x86_64-linux";
       protocol = "ssh";
-      maxJobs = 5;
+      maxJobs = 8;
       speedFactor = 0;
       supportedFeatures = ["nixos-test" "benchmark" "big-parallel" "kvm"];
       mandatoryFeatures = [];
@@ -20,7 +20,7 @@
       sshUser = "nixbuilder";
       system = "x86_64-linux";
       protocol = "ssh";
-      maxJobs = 5;
+      maxJobs = 8;
       speedFactor = 0;
       supportedFeatures = ["nixos-test" "benchmark" "big-parallel" "kvm"];
       mandatoryFeatures = [];
@@ -33,9 +33,13 @@
   programs.ssh.extraConfig = ''
       Host nixos-thinkpad
         StrictHostKeyChecking no
+        ConnectTimeout=2
+        ConnectionAttempts=1
 
       Host inwin-tower
           StrictHostKeyChecking no
+          ConnectTimeout=2
+          ConnectionAttempts=1
   '';
 
   users.users.nixbuilder = {
