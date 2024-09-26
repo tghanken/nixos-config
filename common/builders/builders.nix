@@ -50,6 +50,7 @@
   users.groups.nixbuilder = {};
   nix.settings.trusted-users = ["nixbuilder"];
 
+  # TODO: Need to add a signing key to the trusted-users list
   services.nix-serve = {
     enable = true;
     port = 16893;
