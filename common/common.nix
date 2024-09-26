@@ -1,6 +1,7 @@
 {pkgs, ...}: {
   imports = [
     ./bootloader/bootloader.nix
+    ./builders/builders.nix
     ./desktop/desktop.nix
     ./locale/locale.nix
     ./networking/networking.nix
@@ -15,11 +16,21 @@
   environment.variables.EDITOR = "nano";
 
   nix.settings = {
+    # Reasonable defaults
+    connect-timeout = 1;
+    download-attempts = 1;
+    log-lines = 25;
+    max-jobs = "auto";
+    min-free = 128000000;
+    max-free = 1000000000;
+    fallback = true;
+    warn-dirty = false;
+    keep-outputs = true;
+
     experimental-features = ["nix-command" "flakes"];
     substituters = [
       "https://nix-community.cachix.org"
       "https://cache.garnix.io"
-      "https://cache.nixos.org/"
     ];
     trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
