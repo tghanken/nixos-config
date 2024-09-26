@@ -33,12 +33,12 @@
   programs.ssh.extraConfig = ''
       Host nixos-thinkpad
         StrictHostKeyChecking no
-        ConnectTimeout=2
+        ConnectTimeout=1
         ConnectionAttempts=1
 
       Host inwin-tower
           StrictHostKeyChecking no
-          ConnectTimeout=2
+          ConnectTimeout=1
           ConnectionAttempts=1
   '';
 

@@ -17,7 +17,7 @@
 
   nix.settings = {
     # Reasonable defaults
-    connect-timeout = 2;
+    connect-timeout = 1;
     download-attempts = 1;
     log-lines = 25;
     max-jobs = "auto";
