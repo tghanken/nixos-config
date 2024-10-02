@@ -37,6 +37,13 @@
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
     ];
   };
+  programs.nh = {
+    enable = true;
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 7d --keep 5";
+    flake = "/etc/nixos";
+  };
+  nix.settings.auto-optimise-store = true;
   environment.systemPackages = with pkgs; [
     git
     nano
