@@ -51,8 +51,8 @@
   '';
 
   users.users.nixbuilder = {
-    isSystemUser = true;
-    description = "Nix builder";
+    isNormalUser = true;
+    description = "nixbuilder";
     group = "nixbuilder";
   };
   users.groups.nixbuilder = {};
