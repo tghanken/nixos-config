@@ -20,7 +20,6 @@ with config; {
   networking.hostName = "inwin-tower"; # Define your hostname.
   networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
 
-  services.tailscale.authKey = "tskey-auth-kfMxvmtDkb11CNTRL-zCvVcCMqVt8vAWaYU9qPw8nKJ4wtAn5nE";
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
 
   boot.loader.efi.canTouchEfiVariables = lib.mkForce false;

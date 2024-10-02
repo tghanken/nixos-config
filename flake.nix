@@ -70,6 +70,7 @@
               ./machines/inwin-tower/configuration.nix
               ./common/common.nix
 
+              agenix.nixosModules.default
               {
                 # TODO: Split this into a flake-part module
                 environment.systemPackages = [agenix.packages."x86_64-linux".default];
@@ -107,6 +108,7 @@
               ./machines/nixos-thinkpad/configuration.nix
               ./common/common.nix
 
+              agenix.nixosModules.default
               {
                 # TODO: Split this into a flake-part module
                 environment.systemPackages = [agenix.packages."x86_64-linux".default];
@@ -142,6 +144,7 @@
               ./machines/nixos-usb/configuration.nix
               ./common/common.nix
 
+              agenix.nixosModules.default
               {
                 # TODO: Split this into a flake-part module
                 environment.systemPackages = [agenix.packages."x86_64-linux".default];
