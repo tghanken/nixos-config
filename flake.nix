@@ -45,6 +45,7 @@
   outputs = inputs @ {
     nixpkgs,
     home-manager,
+    agenix,
     disko,
     flake-parts,
     nix-serve-ng,
@@ -68,6 +69,11 @@
               nix-serve-ng.nixosModules.default
               ./machines/inwin-tower/configuration.nix
               ./common/common.nix
+
+              {
+                # TODO: Split this into a flake-part module
+                environment.systemPackages = [agenix.packages."x86_64-linux".default];
+              }
 
               # make home-manager as a module of nixos
               # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
@@ -101,6 +107,11 @@
               ./machines/nixos-thinkpad/configuration.nix
               ./common/common.nix
 
+              {
+                # TODO: Split this into a flake-part module
+                environment.systemPackages = [agenix.packages."x86_64-linux".default];
+              }
+
               # make home-manager as a module of nixos
               # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
               home-manager.nixosModules.home-manager
@@ -130,6 +141,11 @@
             modules = [
               ./machines/nixos-usb/configuration.nix
               ./common/common.nix
+
+              {
+                # TODO: Split this into a flake-part module
+                environment.systemPackages = [agenix.packages."x86_64-linux".default];
+              }
 
               # make home-manager as a module of nixos
               # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
