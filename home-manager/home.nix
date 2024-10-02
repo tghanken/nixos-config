@@ -155,8 +155,6 @@
 
     # set some aliases, feel free to add more or remove some
     shellAliases = {
-      osbuild = "nixos-rebuild build |& nom";
-      osswitch = "echo \"Enter sudo password:\"; sudo echo \"Authenticated! Starting build.\"; sudo nixos-rebuild switch |& nom";
       gitprune = "git fetch -p ; git branch -r | awk '{print $1}' | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk '{print $1}' | xargs git branch -D";
       gitsync = "git checkout main; git pull; gitprune;";
     };

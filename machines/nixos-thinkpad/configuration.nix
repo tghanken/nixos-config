@@ -20,6 +20,7 @@ with config; {
   networking.hostId = "a0d787a6"; # Generate using `head -c 8 /etc/machine-id`
 
   services.tailscale.authKey = "tskey-auth-knJSHocuQn11CNTRL-kyer5oNq6ADApVLAVhijCDgEiFYP64nm";
+  boot.binfmt.emulatedSystems = ["aarch64-linux"];
 
   boot.zfs.devNodes = "/dev/disk/by-label";
 

@@ -8,7 +8,7 @@
     {
       hostName = "nixos-thinkpad";
       sshUser = "nixbuilder";
-      system = "x86_64-linux";
+      systems = ["x86_64-linux" "aarch64-linux"];
       protocol = "ssh";
       maxJobs = 8;
       speedFactor = 0;
@@ -18,7 +18,7 @@
     {
       hostName = "inwin-tower";
       sshUser = "nixbuilder";
-      system = "x86_64-linux";
+      systems = ["x86_64-linux" "aarch64-linux"];
       protocol = "ssh";
       maxJobs = 8;
       speedFactor = 0;
@@ -27,24 +27,32 @@
     }
   ];
   nix.settings.substituters = [
-    (if (config.networking.hostName != "nixos-thinkpad") then "http://nixos-thinkpad.myth-chameleon.ts.net:16893" else "")
-    (if (config.networking.hostName != "inwin-tower") then "http://inwin-tower.myth-chameleon.ts.net:16893" else "")
+    (
+      if (config.networking.hostName != "nixos-thinkpad")
+      then "http://nixos-thinkpad.myth-chameleon.ts.net:16893"
+      else ""
+    )
+    (
+      if (config.networking.hostName != "inwin-tower")
+      then "http://inwin-tower.myth-chameleon.ts.net:16893"
+      else ""
+    )
   ];
   programs.ssh.extraConfig = ''
-      Host nixos-thinkpad
+    Host nixos-thinkpad
+      StrictHostKeyChecking no
+      ConnectTimeout=1
+      ConnectionAttempts=1
+
+    Host inwin-tower
         StrictHostKeyChecking no
         ConnectTimeout=1
         ConnectionAttempts=1
-
-      Host inwin-tower
-          StrictHostKeyChecking no
-          ConnectTimeout=1
-          ConnectionAttempts=1
   '';
 
   users.users.nixbuilder = {
     isNormalUser = true;
-    description = "Nix builder";
+    description = "nixbuilder";
     group = "nixbuilder";
   };
   users.groups.nixbuilder = {};
