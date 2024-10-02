@@ -37,6 +37,10 @@
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
     ];
   };
+  # Secrets
+  age.secrets = {
+    tailscale_key.file = ../secrets/tailscale_key.age;
+  };
   programs.nh = {
     enable = true;
     clean.enable = true;

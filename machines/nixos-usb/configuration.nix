@@ -14,8 +14,6 @@ with config; {
   ];
   networking.hostName = "nixos-usb"; # Define your hostname.
 
-  services.tailscale.authKey = "tskey-auth-kUpUwT8ne921CNTRL-xHFfTssLnnZgddFsUiLgqZLxKVSoErMFc";
-
   # Overrides for graphical base
   boot.loader.grub.enable = lib.mkForce false;
   networking.wireless.enable = lib.mkForce false;

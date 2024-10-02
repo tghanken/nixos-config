@@ -7,12 +7,6 @@
 with lib; let
   cfg = config.services.tailscale;
 in {
-  options.services.tailscale = {
-    authKey = mkOption {
-      type = types.str;
-    };
-  };
-
   # make the tailscale command usable to users
   config.environment.systemPackages = [pkgs.tailscale];
 
@@ -43,7 +37,7 @@ in {
       fi
 
       # otherwise authenticate with tailscale
-      ${tailscale}/bin/tailscale up -authkey ${cfg.authKey} --ssh
+      ${tailscale}/bin/tailscale up -authkey $(cat ${config.age.secrets."tailscale_key".path}) --ssh
     '';
   };
 }

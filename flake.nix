@@ -8,6 +8,14 @@
       url = "github:nix-community/home-manager/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    agenix = {
+      url = "github:ryantm/agenix";
+      # TODO: Enable once darwin is setup
+      inputs.darwin.follows = "";
+      inputs.home-manager.follows = "home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.systems.follows = "nix-systems";
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -24,15 +32,20 @@
     };
     flake-utils = {
       url = "github:numtide/flake-utils";
+      inputs.systems.follows = "nix-systems";
     };
     flake-compat = {
       url = "github:edolstra/flake-compat";
+    };
+    nix-systems = {
+      url = "github:nix-systems/default";
     };
   };
 
   outputs = inputs @ {
     nixpkgs,
     home-manager,
+    agenix,
     disko,
     flake-parts,
     nix-serve-ng,
@@ -56,6 +69,12 @@
               nix-serve-ng.nixosModules.default
               ./machines/inwin-tower/configuration.nix
               ./common/common.nix
+
+              agenix.nixosModules.default
+              {
+                # TODO: Split this into a flake-part module
+                environment.systemPackages = [agenix.packages."x86_64-linux".default];
+              }
 
               # make home-manager as a module of nixos
               # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
@@ -89,6 +108,12 @@
               ./machines/nixos-thinkpad/configuration.nix
               ./common/common.nix
 
+              agenix.nixosModules.default
+              {
+                # TODO: Split this into a flake-part module
+                environment.systemPackages = [agenix.packages."x86_64-linux".default];
+              }
+
               # make home-manager as a module of nixos
               # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
               home-manager.nixosModules.home-manager
@@ -118,6 +143,12 @@
             modules = [
               ./machines/nixos-usb/configuration.nix
               ./common/common.nix
+
+              agenix.nixosModules.default
+              {
+                # TODO: Split this into a flake-part module
+                environment.systemPackages = [agenix.packages."x86_64-linux".default];
+              }
 
               # make home-manager as a module of nixos
               # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
