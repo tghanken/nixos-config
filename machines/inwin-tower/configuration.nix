@@ -17,6 +17,30 @@ with config; {
     ../../apps/steam.nix
   ];
 
+  fileSystems."/mnt/syno/restic" = {
+    # NFS set to wildcard hostname, readonly, map all users to admin.
+    device = "pinonnas.myth-chameleon.ts.net:/volume2/restic";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.1"
+      "ro"
+      "x-systemd.automount"
+      "noauto"
+    ];
+  };
+
+  fileSystems."/mnt/syno/hyper-backup-store" = {
+    # NFS set to wildcard hostname, readonly, map all users to admin.
+    device = "pinonnas.myth-chameleon.ts.net:/volume3/hyper-backup-store";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.1"
+      "ro"
+      "x-systemd.automount"
+      "noauto"
+    ];
+  };
+
   networking.hostName = "inwin-tower"; # Define your hostname.
   networking.hostId = "89cc1717"; # Generate using `head -c 8 /etc/machine-id`
 
