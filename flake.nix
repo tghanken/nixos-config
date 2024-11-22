@@ -4,7 +4,6 @@
   inputs = {
     # Core Inputs
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -37,43 +36,11 @@
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
     };
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-    };
-
-    # Rust Inputs
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    crane.url = "github:ipetkov/crane";
-    advisory-db = {
-      url = "github:rustsec/advisory-db";
-      flake = false;
-    };
-
-    # JS Inputs
-    dream2nix = {
-      url = "github:nix-community/dream2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.purescript-overlay.follows = "purescript-overlay";
-    };
-    purescript-overlay = {
-      url = "github:thomashoneyman/purescript-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-compat.follows = "flake-compat";
-      inputs.slimlock.follows = "slimlock";
-    };
-    slimlock = {
-      url = "github:thomashoneyman/slimlock";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = inputs @ {
     # Core Inputs
     nixpkgs,
-    nixpkgs-unstable,
     flake-parts,
     # NixOs Inputs
     agenix,
@@ -81,12 +48,6 @@
     home-manager,
     nixos-generators,
     nixos-hardware,
-    # Rust Inputs
-    rust-overlay,
-    crane,
-    advisory-db,
-    # JS Inputs
-    dream2nix,
     ...
   }:
     flake-parts.lib.mkFlake {inherit inputs;} ({
