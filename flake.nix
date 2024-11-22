@@ -97,12 +97,10 @@
       inherit (flake-parts-lib) importApply;
       flakeModules.clusters = importApply ./clusters/clusters.nix {inherit withSystem;};
       flakeModules.machines = import ./machines/machines.nix;
-      flakeModules.projects = import ./projects/projects.nix;
     in {
       imports = [
         flakeModules.clusters
         flakeModules.machines
-        flakeModules.projects
       ];
 
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
