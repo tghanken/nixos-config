@@ -1,7 +1,7 @@
 {
   system.autoUpgrade = {
     enable = true;
-    flake = "github:tghanken/playground";
+    flake = "github:tghanken/nixos-config";
     flags = [
       "-L" # print build logs
     ];
