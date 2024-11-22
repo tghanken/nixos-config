@@ -1,0 +1,24 @@
+name: Validate PR Title
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  main:
+    name: 🔦 Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🎟 Get GitHub App token
+        uses: navikt/github-app-token-generator@b96ff604b2300989cd1105e3fad09199fca56681
+        id: get-token
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+      - name: 🔦 Check pull request title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
