@@ -69,8 +69,27 @@
       perSystem = {
         pkgs,
         system,
+        lib,
         ...
       }: {
+        checks = let
+          fs = lib.fileset;
+          sourceFiles = fs.unions [
+            (fs.fileFilter (file: file.hasExt "nix") ./.)
+          ];
+        in {
+          nix-fmt-check = pkgs.stdenv.mkDerivation {
+            name = "nix-fmt-check";
+            src = fs.toSource {
+              root = ./.;
+              fileset = sourceFiles;
+            };
+            installPhase = ''
+              ${pkgs.alejandra}/bin/alejandra -c .
+              touch $out
+            '';
+          };
+        };
         formatter = pkgs.alejandra;
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
