@@ -24,8 +24,7 @@ with config; {
 
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
 
-  # Enable OpenGL
-  hardware.opengl = {
+  hardware.graphics = {
     enable = true;
   };
 
