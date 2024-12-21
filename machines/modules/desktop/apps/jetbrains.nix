@@ -3,6 +3,8 @@
     jetbrains-toolbox
     jetbrains.rust-rover
     rustup
+    cargo
+    rustc
     clang
     mold
   ];
