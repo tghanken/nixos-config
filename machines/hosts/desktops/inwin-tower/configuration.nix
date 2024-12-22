@@ -13,8 +13,10 @@ with config; {
     ./hardware-configuration.nix
 
     # Include any additional apps desired
+    ../../../modules/desktop/apps/aider.nix
     ../../../modules/desktop/apps/jetbrains.nix
     ../../../modules/desktop/apps/steam.nix
+    # ../../../modules/desktop/apps/windsurf.nix
   ];
 
   networking.hostName = "inwin-tower"; # Define your hostname.

@@ -57,7 +57,7 @@
     }: let
       inherit (flake-parts-lib) importApply;
       flakeModules.clusters = importApply ./clusters/clusters.nix {inherit withSystem;};
-      flakeModules.machines = import ./machines/machines.nix;
+      flakeModules.machines = importApply ./machines/machines.nix {inherit withSystem;};
     in {
       imports = [
         flakeModules.clusters
@@ -95,6 +95,11 @@
           packages = with pkgs; [
             inputs.agenix.packages.${system}.default
           ];
+        };
+
+        packages = import ./packages {
+          inherit nixpkgs;
+          pkgs = nixpkgs.legacyPackages.${system};
         };
       };
     });

@@ -1,3 +1,4 @@
+localFlake:
 {inputs, ...}:
 with inputs; let
   home = [
