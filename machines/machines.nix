@@ -1,4 +1,4 @@
-{inputs, ...}:
+localFlake: {inputs, ...}:
 with inputs; let
   home = [
     home-manager.nixosModules.home-manager
