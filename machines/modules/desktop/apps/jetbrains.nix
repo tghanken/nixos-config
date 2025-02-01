@@ -7,6 +7,7 @@
     rustc
     clang
     mold
+    cmake
   ];
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
