@@ -108,6 +108,7 @@
 
   programs.git = {
     enable = true;
+    lfs.enable = true;
     userName = "Taylor Hanken";
     userEmail = "tghanken@gmail.com";
   };
