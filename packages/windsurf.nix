@@ -10,8 +10,8 @@
 }:
 # https://windsurf-stable.codeium.com/api/update/linux-x64/stable/latest
 let
-  version = "1.2.6"; # "windsurfVersion"
-  hash = "d08b8ea13d580d24be204c76e5dd1651d7234cd2"; # "version"
+  version = "1.4.4"; # "windsurfVersion"
+  hash = "cc9029eb32109a384927ed0ec54fcfe931879907"; # "version"
 in
   callPackage "${nixpkgs}/pkgs/applications/editors/vscode/generic.nix" rec {
     inherit commandLineArgs useVSCodeRipgrep version;
@@ -24,7 +24,7 @@ in
 
     src = fetchurl {
       url = "https://windsurf-stable.codeiumdata.com/linux-x64/stable/${hash}/Windsurf-linux-x64-${version}.tar.gz";
-      hash = "sha256-rXHrArkwLUzxQTwKg3Y/Rf5FXlvnTunhR3vqLoWgLKo=";
+      hash = "sha256-IBWBEGmReon7bXRm9l4XohPxbVHUBekih27ADurOtr4=";
     };
 
     sourceRoot = "Windsurf";
