@@ -48,6 +48,7 @@
     eza # A modern replacement for ‘ls’
     fzf # A command-line fuzzy finder
     gparted
+    atuin
 
     # networking tools
     mtr # A network diagnostic tool
