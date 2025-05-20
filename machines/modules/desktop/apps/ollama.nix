@@ -1,5 +1,5 @@
 {pkgs, ...}: {
-services.ollama = {
+  services.ollama = {
     enable = true;
     home = "/mnt/ollama";
     acceleration = "cuda";
