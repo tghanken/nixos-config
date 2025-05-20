@@ -170,6 +170,7 @@
         ollama = {
           type = "zfs_fs";
           mountpoint = "/mnt/ollama";
+          options.mountpoint = "legacy";
         };
         reserved = {
           type = "zfs_fs";
