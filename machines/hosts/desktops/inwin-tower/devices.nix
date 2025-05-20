@@ -167,6 +167,10 @@
           type = "zfs_fs";
           mountpoint = "/mnt/steam";
         };
+        ollama = {
+          type = "zfs_fs";
+          mountpoint = "/mnt/ollama";
+        };
         reserved = {
           type = "zfs_fs";
           options.refreservation = "10G";
