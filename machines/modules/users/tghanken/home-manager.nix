@@ -87,6 +87,8 @@
     vscode-extensions.mhutchie.git-graph
     graphite-cli
     gh
+    windsurf
+    warp-terminal
 
     btop # replacement of htop/nmon
     iotop # io monitoring
