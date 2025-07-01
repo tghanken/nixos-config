@@ -160,7 +160,7 @@
     shellAliases = {
       gitprune = "git fetch -p ; git branch -r | awk '{print $1}' | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk '{print $1}' | xargs git branch -D";
       gitsync = "git checkout main; git pull; gitprune;";
-      # windsurf = "nix run github:tghanken/nixos-config#windsurf";
+      windsurf = "nix run github:tghanken/nixos-config#windsurf";
     };
   };
 
