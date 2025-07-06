@@ -48,6 +48,7 @@
     eza # A modern replacement for ‘ls’
     fzf # A command-line fuzzy finder
     gparted
+    atuin
 
     # networking tools
     mtr # A network diagnostic tool
@@ -154,6 +155,7 @@
     # TODO add your custom bashrc here
     bashrcExtra = ''
       export PATH="$PATH:$HOME/bin:$HOME/.local/bin:$HOME/go/bin"
+      echo 'eval "$(atuin init bash)"' >> ~/.bashrc
     '';
 
     # set some aliases, feel free to add more or remove some
@@ -163,6 +165,8 @@
       windsurf = "nix run github:tghanken/nixos-config#windsurf";
     };
   };
+
+  programs.blesh.enable = true;
 
   # This value determines the home Manager release that your
   # configuration is compatible with. This helps avoid breakage
