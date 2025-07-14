@@ -14,6 +14,7 @@ with config; {
     ./hardware-configuration.nix
 
     # Include any additional apps desired
+    ../../../modules/desktop/apps/claude.nix
     ../../../modules/desktop/apps/ollama.nix
     ../../../modules/desktop/apps/jetbrains.nix
     ../../../modules/desktop/apps/steam.nix
