@@ -29,10 +29,6 @@
 
   # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
-    # here is some command line tools I use frequently
-    # feel free to add your own or remove some of them
-
-    neofetch
     nnn # terminal file manager
 
     # archives
@@ -57,11 +53,8 @@
     aria2 # A lightweight multi-protocol & multi-source command-line download utility
     socat # replacement of openbsd-netcat
     nmap # A utility for network discovery and security auditing
-    ipcalc # it is a calculator for the IPv4/v6 addresses
 
     # misc
-    cowsay
-    file
     which
     tree
     gnused
@@ -79,24 +72,17 @@
     turbo
 
     # nix related
-    #
-    # it provides the command `nom` works just like `nix`
-    # with more details log output
     nix-tree
     nix-output-monitor
 
     # productivity
-    hugo # static site generator
     firefox
     google-chrome
-    glow # markdown previewer in terminal
     vscode
     vscode-extensions.jnoortheen.nix-ide
     vscode-extensions.mhutchie.git-graph
     graphite-cli
     gh
-    windsurf
-    warp-terminal
 
     btop # replacement of htop/nmon
     iotop # io monitoring
