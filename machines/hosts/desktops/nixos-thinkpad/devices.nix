@@ -75,6 +75,7 @@
         nix = {
           type = "zfs_fs";
           mountpoint = "/nix";
+          options."com.sun:auto-snapshot" = "false";
         };
         var = {
           type = "zfs_fs";
@@ -87,6 +88,7 @@
         steam = {
           type = "zfs_fs";
           mountpoint = "/mnt/steam";
+          options."com.sun:auto-snapshot" = "false";
         };
         reserved = {
           type = "zfs_fs";

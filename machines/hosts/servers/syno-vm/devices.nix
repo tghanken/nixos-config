@@ -75,6 +75,7 @@
         nix = {
           type = "zfs_fs";
           mountpoint = "/nix";
+          options."com.sun:auto-snapshot" = "false";
         };
         var = {
           type = "zfs_fs";
