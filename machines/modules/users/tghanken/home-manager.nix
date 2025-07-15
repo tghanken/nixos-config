@@ -74,6 +74,9 @@
     nodejs
     pnpm
     bun
+    playwright
+    playwright-driver.browsers
+    turbo
 
     # nix related
     #
@@ -159,6 +162,7 @@
     # TODO add your custom bashrc here
     bashrcExtra = ''
       export PATH="$PATH:$HOME/bin:$HOME/.local/bin:$HOME/go/bin:$HOME/.bun/bin"
+      export PLAYWRIGHT_BROWSERS_PATH="${pkgs.playwright-driver.browsers}";
     '';
 
     # set some aliases, feel free to add more or remove some
