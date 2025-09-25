@@ -109,6 +109,16 @@
     userEmail = "tghanken@gmail.com";
   };
 
+  programs.jujutsu = {
+    enable = true;
+    settings = {
+      user = {
+        email = "jdoe@example.org";
+        name = "John Doe";
+      };
+    };
+  };
+
   programs.direnv = {
     enable = true;
     enableBashIntegration = true;
