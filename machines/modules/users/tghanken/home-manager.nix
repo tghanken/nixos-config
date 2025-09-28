@@ -168,7 +168,6 @@
       export PATH="$PATH:$HOME/bin:$HOME/.local/bin:$HOME/go/bin:$HOME/.bun/bin"
       export PLAYWRIGHT_BROWSERS_PATH="${pkgs.playwright-driver.browsers}";
     '';
-
     # set some aliases, feel free to add more or remove some
     shellAliases = {
       gitprune = "git fetch -p ; git branch -r | awk '{print $1}' | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk '{print $1}' | xargs git branch -D";
@@ -178,7 +177,7 @@
   };
 
   home.sessionVariables = {
-    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt";
+    SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
   };
 
   # This value determines the home Manager release that your
