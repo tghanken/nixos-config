@@ -178,7 +178,7 @@
   };
 
   home.sessionVariables = {
-    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt";
+    SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
   };
 
   # This value determines the home Manager release that your
