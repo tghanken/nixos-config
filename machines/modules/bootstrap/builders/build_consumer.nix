@@ -15,23 +15,23 @@
   };
   hosts = [
     # Servers First
-    {
-      hostName = "syno-vm";
-      speedFactor = 2;
-      maxJobs = 4;
-    }
-    {
-      hostName = "nixos-rpi4-1";
-      maxJobs = 2;
-    }
-    {
-      hostName = "nixos-rpi4-2";
-      maxJobs = 2;
-    }
-    {
-      hostName = "nixos-rpi4-3";
-      maxJobs = 2;
-    }
+    # {
+    #   hostName = "syno-vm";
+    #   speedFactor = 2;
+    #   maxJobs = 4;
+    # }
+    # {
+    #   hostName = "nixos-rpi4-1";
+    #   maxJobs = 2;
+    # }
+    # {
+    #   hostName = "nixos-rpi4-2";
+    #   maxJobs = 2;
+    # }
+    # {
+    #   hostName = "nixos-rpi4-3";
+    #   maxJobs = 2;
+    # }
 
     # Then Desktops
     {
