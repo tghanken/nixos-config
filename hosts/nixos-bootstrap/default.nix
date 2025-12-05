@@ -15,6 +15,10 @@ with config; let
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOHrxGPx3dgap4sUwWyHbQsMJiv9tSNG05BEMNkNLDZF"
   ];
 in {
+  imports = [
+    ../../modules/presets/bootstrap.nix
+  ];
+
   networking.hostName = "nixos-bootstrap"; # Define your hostname.
   networking.hostId = "00000000"; # Set placeholder hostid to support zfs
 

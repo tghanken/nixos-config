@@ -14,9 +14,12 @@ with config; {
     ./hardware-configuration.nix
 
     # Include any additional apps desired
-    ../../../modules/desktop/apps/ollama.nix
-    ../../../modules/desktop/apps/jetbrains.nix
-    ../../../modules/desktop/apps/steam.nix
+    ../../modules/desktop/apps/ollama.nix
+    ../../modules/desktop/apps/jetbrains.nix
+    ../../modules/desktop/apps/steam.nix
+
+    # Presets
+    ../../modules/presets/desktop.nix
   ];
 
   networking.hostName = "inwin-tower"; # Define your hostname.

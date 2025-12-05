@@ -10,6 +10,9 @@ with config; {
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
+
+    # Presets
+    ../../modules/presets/server.nix
   ];
 
   networking.hostName = "syno-vm"; # Define your hostname.

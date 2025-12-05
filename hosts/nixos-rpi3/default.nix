@@ -4,17 +4,22 @@
 {
   config,
   pkgs,
+  inputs,
   ...
 }:
 with config; {
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    ../../../modules/hardware/raspberry-pi/pi4.nix
+    ../../modules/hardware/raspberry-pi/pi3.nix
+    inputs.nixos-hardware.nixosModules.raspberry-pi-3
+
+    # Presets
+    ../../modules/presets/server.nix
   ];
 
-  networking.hostName = "nixos-rpi4-2"; # Define your hostname.
-  networking.hostId = "b8c9164e"; # Generate using `head -c 8 /etc/machine-id`
+  networking.hostName = "nixos-rpi3"; # Define your hostname.
+  networking.hostId = "f06fe3da"; # Generate using `head -c 8 /etc/machine-id`
 
   boot.binfmt.emulatedSystems = ["x86_64-linux"];
 
