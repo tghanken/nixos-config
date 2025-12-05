@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  nixpkgs,
+  inputs,
   callPackage,
   fetchurl,
   nixosTests,
@@ -13,7 +13,7 @@ let
   version = "1.10.5"; # "windsurfVersion"
   hash = "ff497a1ec3dde399fde9c001a3e69a58f2739dac"; # "version"
 in
-  callPackage "${nixpkgs}/pkgs/applications/editors/vscode/generic.nix" rec {
+  callPackage "${inputs.nixpkgs}/pkgs/applications/editors/vscode/generic.nix" rec {
     inherit commandLineArgs useVSCodeRipgrep version;
 
     pname = "windsurf";
