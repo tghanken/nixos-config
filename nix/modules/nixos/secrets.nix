@@ -1,5 +1,0 @@
-{
-  imports = [
-    ../../../secrets/mod.nix
-  ];
-}

@@ -22,9 +22,10 @@ with config; {
     flake.nixosModules.desktop
     flake.nixosModules.kernel
     flake.nixosModules.networking
-    flake.nixosModules.secrets
     flake.nixosModules.sound
     flake.nixosModules.tailscale
+
+    flake.modules.secrets.base
 
     flake.modules.desktop.jetbrains
     flake.modules.desktop.ollama
