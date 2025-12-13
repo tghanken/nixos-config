@@ -1,15 +1,31 @@
 {
-  description = "NixOS configuration for home devices";
+  description = "My nixos configuration";
 
+  # Add all your dependencies here
   inputs = {
-    # Core Inputs
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    # Nixpkgs
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-lib.url = "github:nix-community/nixpkgs.lib";
+    systems.url = "github:nix-systems/default";
+
+    # Flake utilities
+    blueprint = {
+      url = "github:numtide/blueprint";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.systems.follows = "systems";
+    };
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
+      inputs.nixpkgs-lib.follows = "nixpkgs-lib";
     };
-    nix-systems = {
-      url = "github:nix-systems/default";
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # NixOs Inputs
@@ -19,88 +35,51 @@
       inputs.darwin.follows = "";
       inputs.home-manager.follows = "home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.systems.follows = "nix-systems";
+      inputs.systems.follows = "systems";
     };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.05";
+      url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixos-anywhere = {
+      url = "github:nix-community/nixos-anywhere";
+      inputs.disko.follows = "disko";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixos-stable.follows = "nixpkgs";
+      inputs.treefmt-nix.follows = "treefmt-nix";
+    };
+    nixos-facter-modules = {
+      url = "github:numtide/nixos-facter-modules";
     };
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
+      inputs.nixlib.follows = "nixpkgs-lib";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
     };
+
+    # Nix Utilities
+    nix-fast-build = {
+      url = "github:Mic92/nix-fast-build";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.treefmt-nix.follows = "treefmt-nix";
+    };
   };
 
-  outputs = inputs @ {
-    # Core Inputs
-    nixpkgs,
-    flake-parts,
-    # NixOs Inputs
-    agenix,
-    disko,
-    home-manager,
-    nixos-generators,
-    nixos-hardware,
-    ...
-  }:
-    flake-parts.lib.mkFlake {inherit inputs;} ({
-      withSystem,
-      flake-parts-lib,
-      ...
-    }: let
-      inherit (flake-parts-lib) importApply;
-      flakeModules.clusters = importApply ./clusters/clusters.nix {inherit withSystem;};
-      flakeModules.machines = importApply ./machines/machines.nix {inherit withSystem;};
-    in {
-      imports = [
-        flakeModules.clusters
-        flakeModules.machines
-      ];
-
-      systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
-
-      perSystem = {
-        pkgs,
-        system,
-        lib,
-        ...
-      }: {
-        checks = let
-          fs = lib.fileset;
-          sourceFiles = fs.unions [
-            (fs.fileFilter (file: file.hasExt "nix") ./.)
-          ];
-        in {
-          nix-fmt-check = pkgs.stdenv.mkDerivation {
-            name = "nix-fmt-check";
-            src = fs.toSource {
-              root = ./.;
-              fileset = sourceFiles;
-            };
-            installPhase = ''
-              ${pkgs.alejandra}/bin/alejandra -c .
-              touch $out
-            '';
-          };
-        };
-        formatter = pkgs.alejandra;
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            inputs.agenix.packages.${system}.default
-          ];
-        };
-
-        packages = import ./packages {
-          inherit nixpkgs;
-          pkgs = nixpkgs.legacyPackages.${system};
-        };
-      };
-    });
+  # Load the blueprint
+  outputs = inputs:
+    inputs.blueprint {
+      inherit inputs;
+      prefix = "nix/";
+      # Only support systems that have at least one host
+      systems = ["x86_64-linux"];
+    };
 }

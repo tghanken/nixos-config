@@ -1,8 +1,6 @@
+# Ignore build outputs from performing a nix-build or `nix build` command
 result
-result/
-.direnv/
-.DS_Store
-.pre-commit-config.yaml
-logs/
-.aider*
-.env
+result-*
+
+# Ignore automatically generated direnv output
+.direnv

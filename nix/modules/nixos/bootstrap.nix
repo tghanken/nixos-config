@@ -1,0 +1,59 @@
+{
+  lib,
+  pkgs,
+  modulesPath,
+  ...
+}: {
+  imports = [
+    (modulesPath + "/installer/scan/not-detected.nix")
+  ];
+
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+
+  # System packages used for bootstrapping
+  environment.systemPackages = map lib.lowPrio [
+    pkgs.curl
+    pkgs.git
+    pkgs.nano
+  ];
+  environment.variables.EDITOR = "nano";
+
+  # SSH server used for bootstrapping
+  services.openssh.enable = true;
+  users.users.root.openssh.authorizedKeys.keys = [
+    # change this to your ssh key
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICh921bOnrGEySjw/eRrUAj1UbV2sf1YIcm5X74r6gTh"
+  ];
+
+  nix.settings = {
+    # Reasonable defaults
+    connect-timeout = 1;
+    download-attempts = 1;
+    log-lines = 25;
+    max-jobs = "auto";
+    min-free = 128000000;
+    max-free = 1000000000;
+    fallback = true;
+    warn-dirty = false;
+    keep-outputs = true;
+
+    experimental-features = ["nix-command" "flakes"];
+    substituters = [
+      "https://nix-community.cachix.org"
+      "https://cache.garnix.io"
+    ];
+    trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    ];
+  };
+
+  # Store manager
+  programs.nh = {
+    enable = true;
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 7d --keep 5";
+  };
+  nix.settings.auto-optimise-store = true;
+}
