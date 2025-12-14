@@ -1,12 +1,5 @@
-{
-  inputs,
-  flake,
-  ...
-}:
-inputs.nixos-generators.nixosGenerate {
-  system = "x86_64-linux";
-  format = "iso";
-  modules = [
+{flake, ...}: {
+  imports = [
     flake.nixosModules.bootstrap
     flake.nixosModules.kernel
     flake.nixosModules.networking
@@ -16,6 +9,5 @@ inputs.nixos-generators.nixosGenerate {
       boot.supportedFilesystems = ["zfs"];
       system.stateVersion = "25.11";
     }
-    flake.modules.profiles.bootstrap
   ];
 }
