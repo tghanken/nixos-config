@@ -33,6 +33,8 @@
 
     flake.modules.utils.auto-upgrade
     flake.modules.utils.earlyoom
+
+    flake.modules.desktop.steam
   ];
 
   # Required for nixos-anywhere
