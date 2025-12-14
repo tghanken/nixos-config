@@ -14,6 +14,7 @@ inputs.nixos-generators.nixosGenerate {
     {
       networking.hostId = "12345678";
       boot.supportedFilesystems = ["zfs"];
+      system.stateVersion = "25.11";
     }
   ];
 }
