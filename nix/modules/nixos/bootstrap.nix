@@ -21,10 +21,7 @@
 
   # SSH server used for bootstrapping
   services.openssh.enable = true;
-  users.users.root.openssh.authorizedKeys.keys = [
-    # change this to your ssh key
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICh921bOnrGEySjw/eRrUAj1UbV2sf1YIcm5X74r6gTh"
-  ];
+  users.users.root.openssh.authorizedKeys.keys = (import ../secrets/keys.nix).tghanken;
 
   nix.settings = {
     # Reasonable defaults
