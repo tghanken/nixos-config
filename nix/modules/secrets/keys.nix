@@ -29,14 +29,19 @@ rec {
     pegasus
   ];
 
-  # Servers
+  # Local Servers
+  arges = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBQ3ODJklAfTFAdRUJCs8fyhPpaH8ynrqfUXZlj3J4Aa";
   brontes = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIALYW2t7dYik9EY2nAyA6Imj0r0RX25Cmah8rNbdMdKQ";
+  steropes = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH4cuR6nV2E8ACT/Tw3KVPXV9k2dzmJ3gVcx0aLS4UdO";
 
-  servers = [
+  local-servers = [
+    arges
     brontes
+    steropes
   ];
 
   # Array of all machines
+  servers = local-servers;
   machines = clients ++ servers;
 
   # Array of all keys
