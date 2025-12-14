@@ -23,6 +23,7 @@
     # Additional NixOs modules from this flake
     flake.nixosModules.bootloader
     flake.nixosModules.bootstrap
+    flake.nixosModules.determinate
     flake.nixosModules.kernel
     flake.nixosModules.networking
     flake.nixosModules.tailscale

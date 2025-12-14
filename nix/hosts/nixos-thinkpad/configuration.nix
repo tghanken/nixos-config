@@ -22,6 +22,7 @@ with config; {
     flake.nixosModules.bootloader
     flake.nixosModules.bootstrap
     flake.nixosModules.desktop
+    flake.nixosModules.determinate
     flake.nixosModules.kernel
     flake.nixosModules.networking
     flake.nixosModules.sound

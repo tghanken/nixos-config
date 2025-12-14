@@ -9,6 +9,12 @@
     nixpkgs-lib.url = "github:nix-community/nixpkgs.lib";
     systems.url = "github:nix-systems/default";
 
+    # Determinate Nix
+    determinate = {
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Flake utilities
     blueprint = {
       url = "github:numtide/blueprint";
