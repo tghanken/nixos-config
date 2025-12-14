@@ -27,6 +27,12 @@
     flake.nixosModules.kernel
     flake.nixosModules.networking
     flake.nixosModules.sound
+    flake.nixosModules.tailscale
+
+    flake.modules.secrets.base
+
+    flake.modules.utils.auto-upgrade
+    flake.modules.utils.earlyoom
   ];
 
   # Required for nixos-anywhere

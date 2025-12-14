@@ -17,6 +17,9 @@
     # Nixos hardware additions
     inputs.nixos-hardware.nixosModules.gmktec-nucbox-g3-plus
 
+    # Add user modules
+    flake.modules.users.tghanken
+
     # Additional NixOs modules from this flake
     flake.nixosModules.bootloader
     flake.nixosModules.bootstrap
@@ -25,6 +28,9 @@
     flake.nixosModules.tailscale
 
     flake.modules.secrets.base
+
+    flake.modules.utils.auto-upgrade
+    flake.modules.utils.earlyoom
   ];
 
   # Required for nixos-anywhere
