@@ -1,6 +1,7 @@
 {
   inputs,
   flake,
+  config,
   ...
 }: {
   imports = [
@@ -29,6 +30,7 @@
     flake.nixosModules.networking
     flake.nixosModules.sound
     flake.nixosModules.tailscale
+    flake.nixosModules.netbird
 
     flake.modules.secrets.base
 
@@ -37,6 +39,8 @@
 
     flake.modules.desktop.steam
   ];
+
+  services.netbird_user.auth_key_path = config.age.secrets."netbird_taylor_client".path;
 
   # Required for nixos-anywhere
   disko.devices = import ./disk-config.nix;
