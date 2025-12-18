@@ -40,8 +40,19 @@ rec {
     steropes
   ];
 
+  # Remote Servers
+  hades = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJe0fTxbWuNhx3bNy1gPmOSwA8osbbSgkpVU3AdohS98";
+  poseidon = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGo/4fRK2MKj2sdLjcFuGE9K2hs9x4f1oalvZ2ZHCJAO";
+  zeus = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGKQqeZgZiKwwg76bULpnuRWvLZtHdJ958lTMyszSI11";
+
+  remote-servers = [
+    hades
+    poseidon
+    zeus
+  ];
+
   # Array of all machines
-  servers = local-servers;
+  servers = local-servers ++ remote-servers;
   machines = clients ++ servers;
 
   # Array of all keys
