@@ -6,7 +6,6 @@
   services.ollama = {
     enable = true;
     home = "/mnt/ollama";
-    acceleration = "cuda";
     user = "ollama";
   };
 }
