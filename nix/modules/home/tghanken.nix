@@ -39,6 +39,7 @@ in {
     pciutils # lspci
     usbutils # lsusb
     lshw
+    mission-center
   ];
 
   programs.git = {

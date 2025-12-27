@@ -30,6 +30,8 @@
     flake.nixosModules.sound
     flake.nixosModules.tailscale
 
+    flake.modules.desktop.antigravity
+    flake.modules.desktop.lmstudio
     flake.modules.secrets.base
 
     flake.modules.desktop.steam
