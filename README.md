@@ -9,4 +9,4 @@
     - Run `station list` to get wireless interfaces
     - Run `station <interface> connect <SSID>` to connect to your wireless network
 - From another computer, run `nixos-anywhere -f .#<HOST> root@<IP> --phases disko,install,reboot`
-    - If necessary generate a facter.json as part of this command by adding `--generate-hardware-config nixos-facter ./hosts/<HOST>/facter.json`
+    - If necessary generate a facter.json as part of this command by adding `--generate-hardware-config nixos-facter ./nix/hosts/<HOST>/facter.json`
