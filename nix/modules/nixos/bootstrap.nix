@@ -53,4 +53,7 @@
     clean.extraArgs = "--keep-since 7d --keep 5";
   };
   nix.settings.auto-optimise-store = true;
+
+  # Timezone
+  services.tzupdate.enable = true; # Update machine tz using `systemctl start tzupdate`
 }
