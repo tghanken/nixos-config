@@ -1,5 +1,5 @@
 {
   networking.networkmanager.enable = true;
-  # networking.networkmanager.wifi.backend = "iwd";
-  # networking.wireless.iwd.enable = true;
+  networking.useNetworkd = true;
+  networking.dhcpcd.enable = false;
 }
