@@ -2,7 +2,6 @@
   inputs,
   flake,
   modulesPath,
-  config,
   ...
 }: {
   imports = [
@@ -22,22 +21,9 @@
     # Add user modules
     flake.modules.users.tghanken
 
-    # Additional NixOs modules from this flake
-    flake.nixosModules.bootloader
-    flake.nixosModules.bootstrap
-    flake.nixosModules.determinate
-    flake.nixosModules.kernel
-    flake.nixosModules.networking
-    flake.nixosModules.tailscale
-    flake.nixosModules.netbird
-
-    flake.modules.secrets.base
-
-    flake.modules.utils.auto-upgrade
-    flake.modules.utils.earlyoom
+    # Add profiles
+    flake.modules.profiles.remote-server
   ];
-
-  services.netbird_user.auth_key_path = config.age.secrets."netbird_remote_server".path;
 
   # Required for nixos-anywhere
   disko.devices = import ./disk-config.nix;

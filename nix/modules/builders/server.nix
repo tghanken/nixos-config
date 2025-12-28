@@ -8,7 +8,10 @@
     ./user.nix
     inputs.agenix.nixosModules.default
   ];
-  services.nix-serve = {
+
+  config.age.secrets.nix_store_signing_key.file = ../secrets/secret_files/encrypted/nix_store_signing_key.age;
+
+  config.services.nix-serve = {
     enable = true;
     package = pkgs.nix-serve-ng;
     secretKeyFile = config.age.secrets.nix_store_signing_key.path;

@@ -1,4 +1,18 @@
 {
+  flake,
+  config,
+  ...
+}:
+with config; {
+  imports = [
+    flake.modules.profiles.shared-all
+
+    flake.nixosModules.sound
+  ];
+
+  age.secrets.netbird_key.file = ../secrets/secret_files/encrypted/netbird_taylor_client.age;
+  services.netbird_user.auth_key_path = age.secrets.netbird_key.path;
+
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 

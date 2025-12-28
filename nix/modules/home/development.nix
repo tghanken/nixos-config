@@ -1,4 +1,12 @@
-{pkgs, ...}: {
+{
+  flake,
+  pkgs,
+  ...
+}: {
+  imports = [
+    flake.homeModules.desktop
+  ];
+
   programs.vscode = {
     enable = true;
     profiles = {
@@ -11,7 +19,7 @@
           # AI assistance
           kilocode.kilo-code
           Google.gemini-cli-vscode-ide-companion
-          
+
           # Nix development
           jnoortheen.nix-ide
 
@@ -22,6 +30,16 @@
           # Utilities
           gruntfuggly.todo-tree
         ];
+        userSettings = {
+          "files.autoSave" = "afterDelay";
+          "kilo-code.allowedCommands" = [
+            "git log"
+            "git diff"
+            "git show"
+            "nix flake check"
+          ];
+          "kilo-code.deniedCommands" = [];
+        };
       };
     };
   };
@@ -36,5 +54,6 @@
 
   home.packages = with pkgs; [
     antigravity
+    gh
   ];
 }

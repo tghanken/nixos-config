@@ -1,7 +1,6 @@
 {
   inputs,
   flake,
-  config,
   ...
 }: {
   imports = [
@@ -21,27 +20,11 @@
     # Add user modules
     flake.modules.users.tghanken
 
-    # Additional NixOs modules from this flake
-    flake.nixosModules.bootloader
-    flake.nixosModules.bootstrap
-    flake.nixosModules.desktop
-    flake.nixosModules.determinate
-    flake.nixosModules.kernel
-    flake.nixosModules.networking
-    flake.nixosModules.sound
-    flake.nixosModules.tailscale
-    flake.nixosModules.netbird
-
+    # Add profiles
     flake.modules.profiles.ai
-    flake.modules.secrets.base
-
-    flake.modules.desktop.steam
-
-    flake.modules.utils.auto-upgrade
-    flake.modules.utils.earlyoom
+    flake.modules.profiles.development
+    flake.modules.profiles.gaming
   ];
-
-  services.netbird_user.auth_key_path = config.age.secrets."netbird_taylor_client".path;
 
   # Required for nixos-anywhere
   disko.devices = import ./disk-config.nix;

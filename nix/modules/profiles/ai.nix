@@ -1,9 +1,5 @@
 # Serve AI Models
-{flake, pkgs, ...}: {
-  imports = [
-    
-  ];
-
+{pkgs, ...}: {
   environment.systemPackages = with pkgs; [
     lmstudio
   ];
@@ -12,13 +8,13 @@
     rocmPackages.clr.icd
   ];
 
-  users.users.ollama = {
-    isNormalUser = false;
-    description = "Ollama";
-  };
-  services.ollama = {
-    enable = true;
-    home = "/mnt/ollama";
-    user = "ollama";
-  };
+  # users.users.ollama = {
+  #   isNormalUser = false;
+  #   description = "Ollama";
+  # };
+  # services.ollama = {
+  #   enable = true;
+  #   home = "/mnt/ollama";
+  #   user = "ollama";
+  # };
 }

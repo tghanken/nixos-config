@@ -1,15 +1,13 @@
 {
   lib,
   pkgs,
-  modulesPath,
   ...
 }: {
-  imports = [
-    (modulesPath + "/installer/scan/not-detected.nix")
-  ];
-
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
+
+  # Timezone
+  services.tzupdate.enable = true; # Update machine tz using `systemctl start tzupdate`
 
   # System packages used for bootstrapping
   environment.systemPackages = map lib.lowPrio [
@@ -22,6 +20,12 @@
   # SSH server used for bootstrapping
   services.openssh.enable = true;
   users.users.root.openssh.authorizedKeys.keys = (import ../secrets/keys.nix).tghanken;
+  services.openssh.hostKeys = [
+    {
+      path = "/etc/ssh/ssh_host_ed25519_key";
+      type = "ed25519";
+    }
+  ];
 
   nix.settings = {
     # Reasonable defaults
@@ -53,7 +57,4 @@
     clean.extraArgs = "--keep-since 7d --keep 5";
   };
   nix.settings.auto-optimise-store = true;
-
-  # Timezone
-  services.tzupdate.enable = true; # Update machine tz using `systemctl start tzupdate`
 }
