@@ -32,8 +32,7 @@
     flake.nixosModules.tailscale
     flake.nixosModules.netbird
 
-    flake.modules.desktop.antigravity
-    flake.modules.desktop.lmstudio
+    flake.modules.profiles.ai
     flake.modules.secrets.base
 
     flake.modules.desktop.steam
