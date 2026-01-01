@@ -13,35 +13,35 @@
     mandatoryFeatures = [];
   };
   hosts = [
-    # Servers First
-    # {
-    #   hostName = "syno-vm";
-    #   speedFactor = 2;
-    #   maxJobs = 4;
-    # }
-    # {
-    #   hostName = "nixos-rpi4-1";
-    #   maxJobs = 2;
-    # }
-    # {
-    #   hostName = "nixos-rpi4-2";
-    #   maxJobs = 2;
-    # }
-    # {
-    #   hostName = "nixos-rpi4-3";
-    #   maxJobs = 2;
-    # }
-
-    # Then Desktops
+    # Remote Servers
     {
-      hostName = "inwin-tower";
-      speedFactor = 8;
-      maxJobs = 8;
+      hostName = "hades";
+      speedFactor = 2;
+      maxJobs = 4;
     }
     {
-      hostName = "nixos-thinkpad";
-      speedFactor = 8;
-      maxJobs = 12;
+      hostName = "poseidon";
+      speedFactor = 2;
+      maxJobs = 4;
+    }
+    {
+      hostName = "zeus";
+      speedFactor = 2;
+      maxJobs = 4;
+    }
+
+    # Local Servers
+    {
+      hostName = "arges";
+      maxJobs = 2;
+    }
+    {
+      hostName = "brontes";
+      maxJobs = 2;
+    }
+    {
+      hostName = "steropes";
+      maxJobs = 2;
     }
   ];
   filtered_hosts = builtins.filter (host: config.networking.hostName != host.hostName) hosts;
