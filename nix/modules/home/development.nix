@@ -39,6 +39,7 @@
             "nix flake check"
           ];
           "kilo-code.deniedCommands" = [];
+          "git.enabled" = false;
         };
       };
     };
