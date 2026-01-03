@@ -2,6 +2,6 @@
   imports = [
     flake.modules.profiles.shared-all
 
-    flake.modules.builders.server
+    # flake.modules.builders.server
   ];
 }

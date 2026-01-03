@@ -8,7 +8,7 @@
     flake.nixosModules.tailscale
     flake.nixosModules.networking
 
-    flake.modules.builders.client
+    # flake.modules.builders.client
     flake.modules.secrets.base
 
     flake.modules.utils.auto-upgrade
