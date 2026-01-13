@@ -1,6 +1,7 @@
 {
   flake,
   pkgs,
+  perSystem,
   ...
 }: {
   imports = [
@@ -45,7 +46,38 @@
     };
   };
 
-  programs.gemini-cli.enable = true;
+  programs.gemini-cli = {
+    enable = true;
+    package = perSystem.nixpkgs-unstable.gemini-cli;
+    # Gemini currently struggles to boot when this is set
+    # settings = {
+    #   "tools" = {
+    #     "sandbox" = "docker";
+    #   };
+    #   "ide" = {
+    #     "enabled" = true;
+    #     "hasSeenNudge" = true;
+    #   };
+    #   "security" = {
+    #     "auth" = {
+    #       "selectedType" = "oauth-personal";
+    #     };
+    #   };
+    #   "general" = {
+    #     "previewFeatures" = true;
+    #   };
+    #   "output" = {
+    #     "format" = "text";
+    #   };
+    #   "ui" = {
+    #     "footer" = {
+    #       "hideContextPercentage" = false;
+    #     };
+    #     "showMemoryUsage" = true;
+    #     "showModelInfoInChat" = true;
+    #   };
+    # };
+  };
 
   programs.direnv = {
     enable = true;
@@ -54,7 +86,7 @@
   };
 
   home.packages = with pkgs; [
-    antigravity
+    antigravity-fhs
     gh
   ];
 }
