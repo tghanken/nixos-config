@@ -20,6 +20,8 @@ with config; {
   services.xserver.displayManager.lightdm.enable = true;
   services.xserver.desktopManager.cinnamon.enable = true;
 
+  programs.gnome-terminal.enable = false;
+
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";

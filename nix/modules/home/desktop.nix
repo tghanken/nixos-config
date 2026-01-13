@@ -21,6 +21,11 @@
     ];
   };
 
+  programs.ghostty = {
+    enable = true;
+    systemd.enable = true;
+  };
+
   home.packages = with pkgs; [
     mission-center
     google-chrome
