@@ -1,6 +1,6 @@
 builds:
   exclude: []
   include:
-  - checks.*
-  - nixosConfigurations.*
-  - packages.*
+    - 'checks.*.*'
+    - 'nixosConfigurations.*'
+    - 'packages.*.*'
