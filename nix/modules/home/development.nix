@@ -88,5 +88,6 @@
   home.packages = with pkgs; [
     antigravity-fhs
     gh
+    nil
   ];
 }
