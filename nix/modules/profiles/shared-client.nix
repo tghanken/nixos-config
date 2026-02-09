@@ -1,6 +1,7 @@
 {
   flake,
   config,
+  pkgs,
   ...
 }:
 with config; {
@@ -15,6 +16,12 @@ with config; {
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
+  environment.systemPackages = with pkgs; [
+    teams-for-linux
+    zoom-us
+    slack
+    spotify
+  ];
 
   # Enable the Cinnamon Desktop Environment.
   services.xserver.displayManager.lightdm.enable = true;
