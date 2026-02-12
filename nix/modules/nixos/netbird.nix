@@ -1,61 +1,90 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib; let
   cfg = config.services.netbird_user;
-  null_path = /dev/null;
+
+  clientSubmodule = types.submodule ({name, ...}: {
+    options = {
+      auth_key_path = mkOption {
+        type = types.path;
+        description = "Netbird auth key file";
+      };
+      port = mkOption {
+        type = types.int;
+        default = 51821;
+        description = "Wireguard port";
+      };
+      openFirewall = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Open firewall for the port";
+      };
+      interface = mkOption {
+        type = types.str;
+        default = "nb-${name}";
+        description = "Interface name";
+      };
+      hardened = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Hardened mode (fails to bring up DNS route)";
+      };
+    };
+  });
 in {
   options.services.netbird_user = {
-    auth_key_path = mkOption {
-      type = types.path;
-      description = "Netbird auth key file";
-      default = null_path;
+    enable = mkEnableOption "Netbird user service";
+    clients = mkOption {
+      type = types.attrsOf clientSubmodule;
+      default = {};
+      description = "Map of Netbird clients";
     };
   };
 
-  config = {
-    assertions = [
-      {
-        assertion = cfg.auth_key_path != null_path;
-        message = "`auth_key_path` must be set";
-      }
-    ];
+  config = mkIf cfg.enable {
+    # Generate systemd services for each client
+    systemd.services =
+      mapAttrs' (name: client:
+        nameValuePair "netbird-${name}-autoconnect" {
+          description = "Automatic connection to Netbird for ${name}";
 
-    # create a oneshot job to authenticate to Netbird
-    systemd.services.netbird-autoconnect = {
-      description = "Automatic connection to Netbird";
+          # make sure netbird is running before trying to connect
+          after = ["network-pre.target" "netbird-${name}.service"];
+          wants = ["network-pre.target" "netbird-${name}.service"];
+          wantedBy = ["multi-user.target"];
 
-      # make sure netbird is running before trying to connect to netbird
-      after = ["network-pre.target" "netbird-default.service"];
-      wants = ["network-pre.target" "netbird-default.service"];
-      wantedBy = ["multi-user.target"];
+          serviceConfig.Type = "oneshot";
 
-      # set this service as a oneshot job
-      serviceConfig.Type = "oneshot";
-
-      script = with pkgs; ''
-        /run/current-system/sw/bin/netbird-default up --setup-key-file ${cfg.auth_key_path} --allow-server-ssh --enable-ssh-root
-      '';
-    };
+          script = ''
+            /run/current-system/sw/bin/netbird-${name} up --setup-key-file ${client.auth_key_path} --allow-server-ssh --enable-ssh-root
+          '';
+        })
+      cfg.clients
+      // (
+        # protect the secrets in the config file
+        mapAttrs' (name: _client:
+          nameValuePair "netbird-${name}" {
+            serviceConfig.StateDirectoryMode = mkForce "0700";
+          })
+        cfg.clients
+      );
 
     services.netbird = {
       useRoutingFeatures = "both";
-      clients.default = {
-        # default wireguard port 51820 for k3s flannel-wg
-        port = 51821;
-        openFirewall = true;
-        interface = "netbird";
-        hardened = false; # fails to bring up DNS route
-      };
+      clients =
+        mapAttrs (_name: client: {
+          inherit (client) port openFirewall interface hardened;
+        })
+        cfg.clients;
     };
 
     # don't delay network-online
-    systemd.network.wait-online.ignoredInterfaces = [config.services.netbird.clients.default.interface];
+    systemd.network.wait-online.ignoredInterfaces = mapAttrsToList (_name: client: client.interface) cfg.clients;
 
-    # protect the secrets in the config file
-    systemd.services.netbird-default.serviceConfig.StateDirectoryMode = mkForce "0700";
+    # make netbird interface trusted
+    networking.firewall.trustedInterfaces = mapAttrsToList (_name: client: client.interface) cfg.clients;
   };
 }
