@@ -2,6 +2,7 @@ let
   keys = import ../keys.nix;
 in {
   "encrypted/github_pat.age".publicKeys = keys.all;
+  "encrypted/netbird_actionable_tghanken_client.age".publicKeys = keys.clients ++ keys.tghanken;
   "encrypted/netbird_taylor_client.age".publicKeys = keys.all;
   "encrypted/netbird_local_server.age".publicKeys = keys.all;
   "encrypted/netbird_remote_server.age".publicKeys = keys.all;
