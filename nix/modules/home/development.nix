@@ -1,15 +1,28 @@
 {
   flake,
+  inputs,
   pkgs,
+  lib,
   perSystem,
   ...
-}: {
+}: let
+  unstable = import inputs.nixpkgs-unstable {
+    system = pkgs.stdenv.hostPlatform.system;
+    config.allowUnfreePredicate = pkg:
+      builtins.elem (lib.getName pkg) [
+        "antigravity"
+        "code"
+        "vscode"
+      ];
+  };
+in {
   imports = [
     flake.homeModules.desktop
   ];
 
   programs.vscode = {
     enable = true;
+    package = unstable.vscode-fhs;
     profiles = {
       default = {
         enableUpdateCheck = false;
@@ -86,7 +99,7 @@
   };
 
   home.packages = with pkgs; [
-    antigravity-fhs
+    unstable.antigravity-fhs
     gh
     nil
   ];
