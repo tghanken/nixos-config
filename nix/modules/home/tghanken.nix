@@ -25,10 +25,21 @@ in {
       user = {
         inherit name email;
       };
+      revset-aliases = {
+        "closest_merge(to)" = "heads(::to & merges())";
+      };
       aliases = {
         l = ["log" "-r" "(trunk()..@):: | (trunk()..@)-- | trunk()"];
         lwb = ["log" "-r" "ancestors(roots(trunk()..tracked_remote_bookmarks()),2) | ancestors(tracked_remote_bookmarks(),2) | trunk()"];
         lub = ["log" "-r" "ancestors(roots(trunk()..untracked_remote_bookmarks()),2) | ancestors(untracked_remote_bookmarks(),2) | trunk()"];
+        # `jj stack <revset>` to include specific revs
+        stack = ["rebase" "--after" "trunk()" "--before" "megamerge" "--revisions"];
+        # `jj stage` to include the whole stack after the megamerge
+        stage = ["stack" "megamerge+:: ~ empty()"];
+        # `jj restack` to rebase your changes onto `trunk()`
+        restack = ["rebase" "--destination" "trunk()" "--source" "roots(trunk()..) & mutable()"];
+        # clean empty commits after they are squashed and merged.
+        clean = ["abandon" "empty() & mutable() ~ merges() ~ bookmarks()"];
       };
       ui = {
         paginate = "never";
