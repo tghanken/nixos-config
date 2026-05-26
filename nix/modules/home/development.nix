@@ -3,7 +3,6 @@
   inputs,
   pkgs,
   lib,
-  perSystem,
   ...
 }: let
   unstable = import inputs.nixpkgs-unstable {
@@ -11,7 +10,9 @@
     config.allowUnfreePredicate = pkg:
       builtins.elem (lib.getName pkg) [
         "antigravity"
+        "claude-code"
         "code"
+        "cursor"
         "vscode"
       ];
   };
@@ -32,7 +33,6 @@ in {
 
           # AI assistance
           kilocode.kilo-code
-          Google.gemini-cli-vscode-ide-companion
 
           # Nix development
           jnoortheen.nix-ide
@@ -59,39 +59,6 @@ in {
     };
   };
 
-  programs.gemini-cli = {
-    enable = true;
-    package = perSystem.nixpkgs-unstable.gemini-cli;
-    # Gemini currently struggles to boot when this is set
-    # settings = {
-    #   "tools" = {
-    #     "sandbox" = "docker";
-    #   };
-    #   "ide" = {
-    #     "enabled" = true;
-    #     "hasSeenNudge" = true;
-    #   };
-    #   "security" = {
-    #     "auth" = {
-    #       "selectedType" = "oauth-personal";
-    #     };
-    #   };
-    #   "general" = {
-    #     "previewFeatures" = true;
-    #   };
-    #   "output" = {
-    #     "format" = "text";
-    #   };
-    #   "ui" = {
-    #     "footer" = {
-    #       "hideContextPercentage" = false;
-    #     };
-    #     "showMemoryUsage" = true;
-    #     "showModelInfoInChat" = true;
-    #   };
-    # };
-  };
-
   programs.direnv = {
     enable = true;
     enableBashIntegration = true;
@@ -100,6 +67,9 @@ in {
 
   home.packages = with pkgs; [
     unstable.antigravity-fhs
+    unstable.code-cursor-fhs
+    unstable.codex
+    unstable.claude-code
     gh
     nil
   ];
