@@ -8,6 +8,7 @@ with config; {
   imports = [
     flake.modules.profiles.shared-all
 
+    flake.nixosModules.bluetooth
     flake.nixosModules.sound
     flake.nixosModules.netbird
   ];
