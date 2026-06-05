@@ -13,7 +13,10 @@
     "Xft.dpi" = 172;
   };
 
-  programs.firefox.enable = true;
+  programs.firefox = {
+    enable = true;
+    configPath = ".mozilla/firefox";
+  };
   programs.chromium = {
     enable = true;
     extensions = [
