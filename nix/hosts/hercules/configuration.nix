@@ -48,6 +48,19 @@
     # Model configuration
     model.default = "qwen3.6-27b-mtp";
 
+    # External integrations
+    # Headroom: Context compression MCP server (60-95% token reduction)
+    headroom = {
+      enable = true;
+      port = 8787;
+    };
+
+    # Skills: External agent skills
+    skills = {
+      installSuperpowers = true;  # SDLC methodology skills
+      installPonytail = true;     # Lazy senior dev methodology
+    };
+
     # Secrets for future providers (OpenRouter, Kilo Code Gateway, etc.)
     # Uncomment and configure when ready:
     # secretsFile = config.age.secrets.hermes_api_keys.path;

@@ -11,6 +11,11 @@
 #
 # All profiles share the same container, kanban.db, and LM Studio connection.
 # The dispatcher auto-decomposes tasks and routes them to the right profiles.
+#
+# External integrations:
+#   - headroom: Context compression MCP server (60-95% token reduction)
+#   - superpowers: SDLC methodology skills (brainstorming, TDD, code review)
+#   - ponytail: Lazy senior dev methodology (YAGNI, minimal code, audit)
 
 {
   config,
@@ -41,11 +46,11 @@
     };
     builder = {
       description = "Implements code from specs. Writes, tests, and commits code changes. Works in git worktrees.";
-      toolsets = ["terminal" "file" "kanban"];
+      toolsets = ["terminal" "file" "kanban" "mcp"];
     };
     reviewer = {
       description = "Reviews code for correctness, security, style, edge cases, and test coverage. Blocks tasks that need fixes.";
-      toolsets = ["terminal" "file" "kanban"];
+      toolsets = ["terminal" "file" "kanban" "mcp"];
     };
   };
 
@@ -78,6 +83,44 @@
 
   # Filter out empty strings
   nonEmptySoulCmds = builtins.filter (s: s != "") soulCopyCmds;
+
+  # Skills installation script
+  # Clones external skills from GitHub into the shared skills directory
+  skillsInstallScript = ''
+    echo "Installing external skills..."
+    SKILLS_DIR="${config.services.hermes-agent.home}/skills"
+    mkdir -p "$SKILLS_DIR"
+
+    # Superpowers skills
+    TEMP_SUPERPOWERS=$(mktemp -d)
+    git clone --depth 1 https://github.com/obra/superpowers "$TEMP_SUPERPOWERS"
+    if [ -d "$TEMP_SUPERPOWERS/skills" ]; then
+      cp -r "$TEMP_SUPERPOWERS/skills"/* "$SKILLS_DIR/" 2>/dev/null || true
+      echo "  Installed superpowers skills"
+    fi
+    rm -rf "$TEMP_SUPERPOWERS"
+
+    # Ponytail skills
+    TEMP_PONYTAIL=$(mktemp -d)
+    git clone --depth 1 https://github.com/DietrichGebert/ponytail "$TEMP_PONYTAIL"
+    if [ -d "$TEMP_PONYTAIL/skills" ]; then
+      cp -r "$TEMP_PONYTAIL/skills"/* "$SKILLS_DIR/" 2>/dev/null || true
+      echo "  Installed ponytail skills"
+    fi
+    rm -rf "$TEMP_PONYTAIL"
+  '';
+
+  # Headroom MCP server configuration
+  # headroom provides context compression (60-95% token reduction)
+  # It runs as an MCP server inside the container
+  headroomMcpConfig = lib.mkIf cfg.headroom.enable {
+    mcpServers.headroom = {
+      command = "headroom";
+      args = ["mcp"];
+      # headroom runs as a local MCP server
+      # Hermes connects to it automatically via MCP
+    };
+  };
 in {
   options.services.hermes-multi-agent = {
     enable = lib.mkEnableOption "Hermes multi-agent system";
@@ -161,6 +204,33 @@ in {
       default = {};
       description = "Model configuration";
     };
+
+    # External integrations
+    headroom = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          enable = lib.mkEnableOption "Headroom context compression MCP server" // {default = true;};
+          port = lib.mkOption {
+            type = lib.types.port;
+            default = 8787;
+            description = "Port for headroom proxy (if using proxy mode)";
+          };
+        };
+      };
+      default = {};
+      description = "Headroom context compression configuration";
+    };
+
+    skills = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          installSuperpowers = lib.mkEnableOption "Install superpowers skills" // {default = true;};
+          installPonytail = lib.mkEnableOption "Install ponytail skills" // {default = true;};
+        };
+      };
+      default = {};
+      description = "External skills installation configuration";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -198,6 +268,12 @@ in {
             containerPort = 9119;
             protocol = "tcp";
           }
+          # Headroom proxy port (if enabled)
+          (lib.mkIf cfg.headroom.enable {
+            hostPort = cfg.headroom.port;
+            containerPort = cfg.headroom.port;
+            protocol = "tcp";
+          })
         ];
       };
 
@@ -224,9 +300,6 @@ in {
           goal_max_turns = 20;
         };
 
-        # API server (enabled via environment in gateway)
-        # The gateway enables this automatically
-
         # Compression for efficiency
         compression = {
           enabled = true;
@@ -238,6 +311,9 @@ in {
           memory_enabled = true;
           user_profile_enabled = true;
         };
+
+        # MCP servers
+        mcp = headroomMcpConfig;
       };
 
       # Secrets (optional)
@@ -249,7 +325,7 @@ in {
     };
 
     # Profile initialization service
-    # Runs once to create profiles and initialize kanban
+    # Runs once to create profiles, install skills, and initialize kanban
     systemd.services."hermes-init-profiles" = {
       description = "Initialize Hermes multi-agent profiles";
       # Run after the container is up but before we expect the gateway to handle requests
@@ -277,6 +353,16 @@ in {
 
         # Copy SOUL.md files
         ${lib.concatStringsSep "\n" nonEmptySoulCmds}
+
+        # Install external skills
+        ${skillsInstallScript}
+
+        # Install headroom (context compression)
+        ${lib.optionalString cfg.headroom.enable ''
+          echo "Installing headroom..."
+          pip install "headroom-ai[all]" --break-system-packages 2>/dev/null || pip install "headroom-ai[all]"
+          echo "  headroom installed"
+        ''}
 
         # Initialize kanban board
         hermes kanban init

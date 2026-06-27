@@ -20,6 +20,7 @@ Sets up a single Hermes Agent container on hercules with multiple profiles for c
 │  │  Gateway process (systemd: hermes-agent)             │   │
 │  │    ├─ Dispatcher (auto-runs every 60s)               │   │
 │  │    ├─ API Server (:8642)                             │   │
+│  │    ├─ Headroom MCP (:8787)                           │   │
 │  │    └─ CLI routing (transparent)                      │   │
 │  │                                                       │   │
 │  │  Profiles:                                            │   │
@@ -27,6 +28,10 @@ Sets up a single Hermes Agent container on hercules with multiple profiles for c
 │  │    - planner (writes technical specs)                │   │
 │  │    - builder (implements code)                       │   │
 │  │    - reviewer (reviews code quality)                 │   │
+│  │                                                       │   │
+│  │  External Skills:                                     │   │
+│  │    - superpowers (SDLC methodology)                  │   │
+│  │    - ponytail (lazy senior dev)                      │   │
 │  └───────────────────────────────────────────────────────┘   │
 │                                                              │
 │  User → hermes chat (host CLI → routes into container)      │
@@ -40,8 +45,49 @@ Sets up a single Hermes Agent container on hercules with multiple profiles for c
 |---------|------|----------|
 | orchestrator | User-facing coordinator, delegates work | kanban, gateway, memory |
 | planner | Breaks requests into technical specs | terminal, file, web, kanban |
-| builder | Implements code from specs | terminal, file, kanban |
-| reviewer | Reviews code for quality | terminal, file, kanban |
+| builder | Implements code from specs | terminal, file, kanban, mcp |
+| reviewer | Reviews code for quality | terminal, file, kanban, mcp |
+
+## External Integrations
+
+### Headroom (Context Compression)
+
+- **What it does**: Compresses tool outputs, logs, files, and RAG chunks before they reach the LLM (60-95% token reduction)
+- **How it works**: Runs as an MCP server inside the container
+- **Port**: 8787 (forwarded to host)
+- **GitHub**: https://github.com/headroomlabs-ai/headroom
+
+### Superpowers (SDLC Methodology)
+
+- **What it does**: Provides composable skills for software development methodology
+- **Skills included**:
+  - brainstorming
+  - dispatching-parallel-agents
+  - executing-plans
+  - finishing-a-development-branch
+  - receiving-code-review
+  - requesting-code-review
+  - subagent-driven-development
+  - systematic-debugging
+  - test-driven-development
+  - using-git-worktrees
+  - using-superpowers
+  - verification-before-completion
+  - writing-plans
+  - writing-skills
+- **GitHub**: https://github.com/obra/superpowers
+
+### Ponytail (Lazy Senior Dev)
+
+- **What it does**: Makes agents think like the laziest senior dev - writes minimal, necessary code
+- **Skills included**:
+  - ponytail (main skill)
+  - ponytail-audit
+  - ponytail-debt
+  - ponytail-gain
+  - ponytail-help
+  - ponytail-review
+- **GitHub**: https://github.com/DietrichGebert/ponytail
 
 ## Usage
 
@@ -73,7 +119,7 @@ The API server is exposed on port 8642:
 
 ```bash
 curl http://localhost:8642/v1/chat/completions \
-  -H "Authorization: Bearer hermes-local-dev-key" \
+  -H "Authorization: Bearer hermes...ey" \
   -H "Content-Type: application/json" \
   -d '{"model": "hermes-agent", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
@@ -148,6 +194,10 @@ All options are under `services.hermes-multi-agent`:
 | `extraVolumes` | list of str | `[]` | Additional container volumes |
 | `secretsFile` | path or null | `null` | Path to env file with API keys |
 | `profiles` | attrs | `{}` | Profile definitions (merged with defaults) |
+| `headroom.enable` | bool | `true` | Enable headroom MCP server |
+| `headroom.port` | int | `8787` | Headroom proxy port |
+| `skills.installSuperpowers` | bool | `true` | Install superpowers skills |
+| `skills.installPonytail` | bool | `true` | Install ponytail skills |
 
 ## Adding API Keys (OpenRouter, etc.)
 
@@ -160,8 +210,6 @@ agenix -e encrypted/hermes_api_keys.age
 2. Add API keys to the file:
 ```
 OPENROUTER_API_KEY=sk-or-...
-KILO_CODE_GATEWAY_KEY=...
-CURSOR_API_KEY=...
 ```
 
 3. Update hercules config:
@@ -203,9 +251,22 @@ sudo systemctl start hermes-init-profiles
 
 Ensure LM Studio is running on the host with API enabled on port 1234.
 
+### Headroom not working
+
+```bash
+# Check if headroom is installed
+docker exec hermes-agent pip show headroom-ai
+
+# Check MCP server status
+docker exec hermes-agent headroom doctor
+```
+
 ## References
 
 - [Hermes Agent Documentation](https://hermes-agent.nousresearch.com/docs)
 - [Kanban Guide](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban)
 - [Nix Setup](https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup)
 - [Profiles](https://hermes-agent.nousresearch.com/docs/user-guide/profiles)
+- [Headroom](https://github.com/headroomlabs-ai/headroom)
+- [Superpowers](https://github.com/obra/superpowers)
+- [Ponytail](https://github.com/DietrichGebert/ponytail)
