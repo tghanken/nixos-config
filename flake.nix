@@ -55,7 +55,6 @@
     nixos-anywhere = {
       url = "github:nix-community/nixos-anywhere";
       inputs.disko.follows = "disko";
-      inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.nixos-stable.follows = "nixpkgs";
       inputs.treefmt-nix.follows = "treefmt-nix";
@@ -79,6 +78,14 @@
       inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.treefmt-nix.follows = "treefmt-nix";
+    };
+
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.systems.follows = "systems";
+      inputs.treefmt-nix.follows = "treefmt-nix";
+      inputs.flake-parts.follows = "flake-parts";
     };
   };
 
