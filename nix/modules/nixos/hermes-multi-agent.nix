@@ -26,6 +26,10 @@
 }: let
   cfg = config.services.hermes-multi-agent;
 
+  # Custom Docker image for the terminal backend sandbox with Determinate Nix
+  # This image extends nikolaik/python-nodejs with nix installed via Determinate Systems
+  terminalSandboxImage = pkgs.callPackage ../../packages/hermes-terminal-sandbox.nix { };
+
   # Soul files for each profile
   souls = {
     orchestrator = ./hermes-souls/orchestrator.md;
@@ -290,6 +294,12 @@ in {
           default = cfg.model.default;
         };
 
+        # Terminal backend: Docker sandbox with Determinate Nix
+        terminal = {
+          backend = "docker";
+          docker_image = "hermes-terminal-sandbox:latest";
+        };
+
         # Kanban configuration
         kanban = {
           auto_decompose = true;
@@ -378,6 +388,24 @@ in {
         touch ${config.services.hermes-agent.home}/.profiles-initialized
 
         echo "Hermes profiles initialized successfully"
+      '';
+    };
+
+    # Load the custom terminal sandbox Docker image into Docker
+    # This runs on boot and after the image derivation changes
+    systemd.services."load-hermes-terminal-sandbox" = {
+      description = "Load Hermes terminal sandbox Docker image";
+      after = ["docker.service"];
+      requires = ["docker.service"];
+      wantedBy = ["multi-user.target"];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        echo "Loading hermes-terminal-sandbox Docker image..."
+        docker load -i ${terminalSandboxImage}
+        echo "Image loaded successfully"
       '';
     };
   };
