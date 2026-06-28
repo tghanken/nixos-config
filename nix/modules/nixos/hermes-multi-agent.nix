@@ -91,34 +91,37 @@
     SKILLS_DIR="${config.services.hermes-agent.home}/skills"
     mkdir -p "$SKILLS_DIR"
 
-    # Superpowers skills
-    TEMP_SUPERPOWERS=$(mktemp -d)
-    git clone --depth 1 https://github.com/obra/superpowers "$TEMP_SUPERPOWERS"
-    if [ -d "$TEMP_SUPERPOWERS/skills" ]; then
-      cp -r "$TEMP_SUPERPOWERS/skills"/* "$SKILLS_DIR/" 2>/dev/null || true
-      echo "  Installed superpowers skills"
-    fi
-    rm -rf "$TEMP_SUPERPOWERS"
+    ${lib.optionalString cfg.skills.installSuperpowers ''
+      # Superpowers skills
+      TEMP_SUPERPOWERS=$(mktemp -d)
+      git clone --depth 1 https://github.com/obra/superpowers "$TEMP_SUPERPOWERS"
+      if [ -d "$TEMP_SUPERPOWERS/skills" ]; then
+        cp -r "$TEMP_SUPERPOWERS/skills"/* "$SKILLS_DIR/" 2>/dev/null || true
+        echo "  Installed superpowers skills"
+      fi
+      rm -rf "$TEMP_SUPERPOWERS"
+    ''}
 
-    # Ponytail skills
-    TEMP_PONYTAIL=$(mktemp -d)
-    git clone --depth 1 https://github.com/DietrichGebert/ponytail "$TEMP_PONYTAIL"
-    if [ -d "$TEMP_PONYTAIL/skills" ]; then
-      cp -r "$TEMP_PONYTAIL/skills"/* "$SKILLS_DIR/" 2>/dev/null || true
-      echo "  Installed ponytail skills"
-    fi
-    rm -rf "$TEMP_PONYTAIL"
+    ${lib.optionalString cfg.skills.installPonytail ''
+      # Ponytail skills
+      TEMP_PONYTAIL=$(mktemp -d)
+      git clone --depth 1 https://github.com/DietrichGebert/ponytail "$TEMP_PONYTAIL"
+      if [ -d "$TEMP_PONYTAIL/skills" ]; then
+        cp -r "$TEMP_PONYTAIL/skills"/* "$SKILLS_DIR/" 2>/dev/null || true
+        echo "  Installed ponytail skills"
+      fi
+      rm -rf "$TEMP_PONYTAIL"
+    ''}
   '';
 
   # Headroom MCP server configuration
   # headroom provides context compression (60-95% token reduction)
   # It runs as an MCP server inside the container
-  headroomMcpConfig = lib.mkIf cfg.headroom.enable {
-    mcpServers.headroom = {
+  # config.yaml key is mcp_servers (snake_case)
+  headroomMcpServers = lib.optionalAttrs cfg.headroom.enable {
+    headroom = {
       command = "headroom";
       args = ["mcp"];
-      # headroom runs as a local MCP server
-      # Hermes connects to it automatically via MCP
     };
   };
 in {
@@ -312,8 +315,8 @@ in {
           user_profile_enabled = true;
         };
 
-        # MCP servers
-        mcp = headroomMcpConfig;
+        # MCP servers (config.yaml: mcp_servers)
+        mcp_servers = headroomMcpServers;
       };
 
       # Secrets (optional)
