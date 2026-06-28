@@ -26,6 +26,9 @@
 }: let
   cfg = config.services.hermes-multi-agent;
 
+  # HERMES_HOME is stateDir/.hermes in the hermes-agent module
+  hermesHome = "${config.services.hermes-agent.stateDir}/.hermes";
+
   # Custom Docker image for the terminal backend sandbox with Determinate Nix
   # This image extends nikolaik/python-nodejs with nix installed via Determinate Systems
   terminalSandboxImage = pkgs.callPackage ../../packages/hermes-terminal-sandbox.nix { };
@@ -61,8 +64,8 @@
   # Merge user-provided profiles with defaults
   mergedProfiles = lib.recursiveUpdate defaultProfiles cfg.profiles;
 
-  # Filter to only enabled profiles
-  enabledProfiles = builtins.filterAttrs (_: v: v.enable) mergedProfiles;
+  # Filter to only enabled profiles (enable defaults to true via NixOS option)
+  enabledProfiles = builtins.filterAttrs (_: v: v.enable or true) mergedProfiles;
 
   # Profile names list
   profileNames = builtins.attrNames enabledProfiles;
@@ -81,7 +84,7 @@
       soulPath = souls.${name} or null;
     in
     if soulPath != null
-    then "cp ${soulPath} ${config.services.hermes-agent.home}/profiles/${name}/SOUL.md"
+    then "cp ${soulPath} ${hermesHome}/profiles/${name}/SOUL.md"
     else ""
   ) profileNames;
 
@@ -92,7 +95,7 @@
   # Clones external skills from GitHub into the shared skills directory
   skillsInstallScript = ''
     echo "Installing external skills..."
-    SKILLS_DIR="${config.services.hermes-agent.home}/skills"
+    SKILLS_DIR="${hermesHome}/skills"
     mkdir -p "$SKILLS_DIR"
 
     ${lib.optionalString cfg.skills.installSuperpowers ''
@@ -138,6 +141,8 @@ in {
       description = "Hermes Agent package to use";
     };
 
+    # Port options kept for documentation; container uses --network=host
+    # so these are the ports the services bind to directly on the host.
     lmStudioPort = lib.mkOption {
       type = lib.types.port;
       default = 1234;
@@ -147,13 +152,13 @@ in {
     apiPort = lib.mkOption {
       type = lib.types.port;
       default = 8642;
-      description = "Host port to expose the Hermes API server on";
+      description = "Host port for the Hermes API server";
     };
 
     dashboardPort = lib.mkOption {
       type = lib.types.port;
       default = 9119;
-      description = "Host port to expose the Hermes dashboard on";
+      description = "Host port for the Hermes dashboard";
     };
 
     orchestratorProfile = lib.mkOption {
@@ -240,12 +245,14 @@ in {
     };
   };
 
+  # Import the hermes-agent nixosModule unconditionally —
+  # the inner mkIf cfg.enable gates all actual config values
+  imports = [
+    inputs.hermes-agent.nixosModules.default
+  ];
+
   config = lib.mkIf cfg.enable {
     # Enable Docker (required for container mode)
-    imports = [
-      inputs.hermes-agent.nixosModules.default
-    ];
-
     virtualisation.docker.enable = true;
 
     # Main Hermes service configuration
@@ -253,41 +260,17 @@ in {
       enable = true;
       package = cfg.package;
 
-      # Container mode
+      # Container mode — uses --network=host so all host ports are accessible
       container = {
         enable = true;
         hostUsers = cfg.hostUsers;
         extraVolumes = cfg.extraVolumes;
-        # Forward ports from host into container
-        forwardPorts = [
-          {
-            hostPort = cfg.lmStudioPort;
-            containerPort = 1234;
-            protocol = "tcp";
-          }
-          {
-            hostPort = cfg.apiPort;
-            containerPort = 8642;
-            protocol = "tcp";
-          }
-          {
-            hostPort = cfg.dashboardPort;
-            containerPort = 9119;
-            protocol = "tcp";
-          }
-          # Headroom proxy port (if enabled)
-          (lib.mkIf cfg.headroom.enable {
-            hostPort = cfg.headroom.port;
-            containerPort = cfg.headroom.port;
-            protocol = "tcp";
-          })
-        ];
       };
 
       # Add CLI to system PATH with container routing
       addToSystemPackages = true;
 
-      # Model configuration (LM Studio via forwarded port)
+      # Model configuration (LM Studio accessible via host network)
       settings = {
         model = {
           base_url = "http://localhost:1234/v1";
@@ -329,7 +312,7 @@ in {
         mcp_servers = headroomMcpServers;
       };
 
-      # Secrets (optional)
+      # Secrets (optional) — listOf paths merged into .env at activation
       environmentFiles = lib.optional (cfg.secretsFile != null) cfg.secretsFile;
 
       # Service tuning
@@ -348,11 +331,11 @@ in {
         Type = "oneshot";
         User = "hermes";
         Group = "hermes";
-        WorkingDirectory = config.services.hermes-agent.home;
+        WorkingDirectory = hermesHome;
       };
       script = ''
         # Guard: only run once
-        if [ -f ${config.services.hermes-agent.home}/.profiles-initialized ]; then
+        if [ -f ${hermesHome}/.profiles-initialized ]; then
           exit 0
         fi
 
@@ -381,11 +364,11 @@ in {
         hermes kanban init
 
         # Configure API server via environment
-        echo "API_SERVER_ENABLED=true" >> ${config.services.hermes-agent.home}/.env
-        echo "API_SERVER_KEY=hermes-local-dev-key" >> ${config.services.hermes-agent.home}/.env
+        echo "API_SERVER_ENABLED=true" >> ${hermesHome}/.env
+        echo "API_SERVER_KEY=hermes-local-dev-key" >> ${hermesHome}/.env
 
         # Mark as initialized
-        touch ${config.services.hermes-agent.home}/.profiles-initialized
+        touch ${hermesHome}/.profiles-initialized
 
         echo "Hermes profiles initialized successfully"
       '';

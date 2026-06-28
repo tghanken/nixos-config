@@ -3,10 +3,7 @@ pkgs.dockerTools.buildImage {
   name = "hermes-terminal-sandbox";
   tag = "latest";
 
-  fromImage = "nikolaik/python-nodejs";
-  fromImageVariants = {
-    tag = "python3.11-nodejs20";
-  };
+  fromImage = "nikolaik/python-nodejs:python3.11-nodejs20";
 
   # Install Determinate Nix
   runAsRoot = ''
