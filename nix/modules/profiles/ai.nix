@@ -1,12 +1,28 @@
 # Serve AI Models
 {
+  inputs,
   pkgs,
-  lib,
   ...
 }: {
-  environment.systemPackages = with pkgs; [
-    lmstudio
-  ];
+  environment.systemPackages =
+    [
+      pkgs.lmstudio
+    ]
+    ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
+      antigravity-cli
+      opencode
+      cursor-agent
+      jules
+      kilocode-cli
+      pi
+      hermes-agent
+      hermes-desktop
+      openspec
+      openspecui
+      lean-ctx
+      qmd
+      nono
+    ]);
   hardware.graphics.extraPackages = with pkgs; [
     # Currently ai profile is only used on amd. If I get a nvidia device, refactor this.
     rocmPackages.clr.icd

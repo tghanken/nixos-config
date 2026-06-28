@@ -10,7 +10,6 @@
     config.allowUnfreePredicate = pkg:
       builtins.elem (lib.getName pkg) [
         "antigravity"
-        "claude-code"
         "code"
         "cursor"
         "vscode"
@@ -68,8 +67,6 @@ in {
   home.packages = with pkgs; [
     unstable.antigravity-fhs
     unstable.code-cursor-fhs
-    unstable.codex
-    unstable.claude-code
     gh
     nil
   ];
