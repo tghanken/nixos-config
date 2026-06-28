@@ -72,6 +72,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Hermes Agent (multi-agent system)
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Nix Utilities
     nix-fast-build = {
       url = "github:Mic92/nix-fast-build";
