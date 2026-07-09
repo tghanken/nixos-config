@@ -58,6 +58,31 @@ in {
     };
   };
 
+  programs.zed-editor = {
+    enable = true;
+    package = unstable.zed-editor;
+    extensions = [
+      "nix"
+      "toml"
+      "rust"
+      "dockerfile"
+      "markdown"
+      "svelte"
+      "vue"
+      "astro"
+      "html"
+      "css"
+    ];
+    userSettings = {
+      theme = {
+        mode = "system";
+        dark = "One Dark";
+        light = "One Light";
+      };
+      load_direnv = "shell_hook";
+    };
+  };
+
   programs.direnv = {
     enable = true;
     enableBashIntegration = true;
@@ -69,5 +94,7 @@ in {
     unstable.code-cursor-fhs
     gh
     nil
+    nixd
+    ripgrep
   ];
 }
