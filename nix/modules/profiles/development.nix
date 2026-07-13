@@ -4,4 +4,6 @@
     flake.modules.profiles.shared-client
     flake.modules.utils.docker
   ];
+
+  programs.nix-ld.enable = true;
 }
