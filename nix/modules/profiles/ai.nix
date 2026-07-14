@@ -7,6 +7,8 @@
   environment.systemPackages =
     [
       pkgs.lmstudio
+      pkgs.ripgrep
+      pkgs.dolt
     ]
     ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
       antigravity-cli
@@ -14,12 +16,16 @@
       cursor-agent
       jules
       kilocode-cli
-      pi
+      omp
+      gascity
+      # beads
+      herdr
+      gitbutler
       hermes-agent
       hermes-desktop
       openspec
       openspecui
-      lean-ctx
+      # lean-ctx
       qmd
       nono
     ]);
