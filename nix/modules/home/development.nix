@@ -92,14 +92,33 @@ in
       "astro"
       "html"
       "css"
+      "terraform"
     ];
     userSettings = {
-      theme = {
-        mode = "system";
-        dark = "One Dark";
-        light = "One Light";
+      autosave.after_delay.milliseconds = 1000;
+      semantic_tokens = "combined";
+      project_panel.default_width = 300.0;
+      project_panel.dock = "left";
+      proxy = "";
+      language_models.lmstudio.api_url = "http://localhost:1234/v1";
+      cli_default_open_behavior = "new_window";
+      agent.profiles = { };
+      agent.default_model.provider = "lmstudio";
+      agent.default_model.model = "qwen3.6-35b-a3b-mtp";
+      agent.default_model.enable_thinking = false;
+      agent.favorite_models = [ ];
+      agent.model_parameters = [ ];
+      agent_servers = {
+        "pi-acp".type = "registry";
+        dirac.default_config_options.mode = "auto";
+        dirac.default_config_options.reasoning_effort = "none";
+        dirac.type = "registry";
+        cursor.default_config_options.model = "composer-2.5[fast=false]";
+        cursor.type = "registry";
       };
-      load_direnv = "shell_hook";
+      base_keymap = "VSCode";
+      load_direnv = "direct";
+      theme = "One Dark";
     };
   };
 
