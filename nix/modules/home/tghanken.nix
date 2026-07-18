@@ -13,6 +13,7 @@ in {
     enable = true;
     lfs.enable = true;
     settings = {
+      beads.role = "maintainer";
       user = {
         inherit name email;
       };

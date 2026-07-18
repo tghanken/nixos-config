@@ -14,10 +14,23 @@
   programs.bash = {
     enable = true;
     enableCompletion = true;
+    initExtra = ''
+      # lean-ctx shell hook
+      if [ -f "$HOME/.config/lean-ctx/shell-hook.bash" ]; then
+        . "$HOME/.config/lean-ctx/shell-hook.bash"
+      fi
+    '';
   };
 
   # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
+    # LSP servers
+    rust-analyzer
+    typescript-language-server
+    nodejs_22 # required by typescript-language-server
+    python3Packages.python-lsp-server
+    gopls
+
     # misc
     which
     tree

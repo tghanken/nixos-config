@@ -14,6 +14,7 @@
     pkgs.curl
     pkgs.git
     pkgs.nano
+    pkgs.ripgrep
   ];
   environment.variables.EDITOR = "nano";
 
@@ -39,7 +40,10 @@
     warn-dirty = false;
     keep-outputs = true;
 
-    experimental-features = ["nix-command" "flakes"];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     substituters = [
       "https://nix-community.cachix.org"
       "https://cache.garnix.io"

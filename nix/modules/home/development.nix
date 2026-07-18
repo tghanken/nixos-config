@@ -5,6 +5,8 @@
   lib,
   ...
 }: let
+  llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  lean-ctx = llm-agents.lean-ctx;
   unstable = import inputs.nixpkgs-unstable {
     system = pkgs.stdenv.hostPlatform.system;
     config.allowUnfreePredicate = pkg:
@@ -45,6 +47,20 @@ in {
         ];
         userSettings = {
           "files.autoSave" = "afterDelay";
+          "github.copilot.chat.planAgent.additionalTools" = [
+            "lean-ctx_ctx_read"
+            "lean-ctx_ctx_search"
+            "lean-ctx_ctx_tree"
+            "lean-ctx_ctx_overview"
+            "lean-ctx_ctx_plan"
+            "lean-ctx_ctx_metrics"
+            "lean-ctx_ctx_compress"
+            "lean-ctx_ctx_session"
+            "lean-ctx_ctx_knowledge"
+            "lean-ctx_ctx_graph"
+            "lean-ctx_ctx_retrieve"
+            "lean-ctx_ctx_provider"
+          ];
           "kilo-code.allowedCommands" = [
             "git log"
             "git diff"
@@ -52,6 +68,7 @@ in {
             "nix flake check"
           ];
           "kilo-code.deniedCommands" = [];
+          "chat.mcp.enabled" = true;
           "git.enabled" = false;
         };
       };
@@ -72,14 +89,33 @@ in {
       "astro"
       "html"
       "css"
+      "terraform"
     ];
     userSettings = {
-      theme = {
-        mode = "system";
-        dark = "One Dark";
-        light = "One Light";
+      autosave.after_delay.milliseconds = 1000;
+      semantic_tokens = "combined";
+      project_panel.default_width = 300.0;
+      project_panel.dock = "left";
+      proxy = "";
+      language_models.lmstudio.api_url = "http://localhost:1234/v1";
+      cli_default_open_behavior = "new_window";
+      agent.profiles = {};
+      agent.default_model.provider = "lmstudio";
+      agent.default_model.model = "qwen3.6-35b-a3b-mtp";
+      agent.default_model.enable_thinking = false;
+      agent.favorite_models = [];
+      agent.model_parameters = [];
+      agent_servers = {
+        "pi-acp".type = "registry";
+        dirac.default_config_options.mode = "auto";
+        dirac.default_config_options.reasoning_effort = "none";
+        dirac.type = "registry";
+        cursor.default_config_options.model = "composer-2.5[fast=false]";
+        cursor.type = "registry";
       };
-      load_direnv = "shell_hook";
+      base_keymap = "VSCode";
+      load_direnv = "direct";
+      theme = "One Dark";
     };
   };
 
@@ -89,12 +125,27 @@ in {
     nix-direnv.enable = true;
   };
 
-  home.packages = with pkgs; [
-    unstable.antigravity-fhs
-    unstable.code-cursor-fhs
-    gh
-    nil
-    nixd
-    ripgrep
-  ];
+  home.packages = with pkgs;
+    [
+      unstable.antigravity-fhs
+      unstable.code-cursor-fhs
+      gh
+      nil
+      nixd
+    ]
+    ++ (with llm-agents; [
+      pi
+      lean-ctx
+    ]);
+
+  home.file = {
+    ".pi/agent/extensions/pi-lean-ctx/config.json" = {
+      text = builtins.toJSON {
+        mode = "replace";
+        enableMcp = true;
+        toolProfile = "power";
+        binary = "${lean-ctx}/bin/lean-ctx";
+      };
+    };
+  };
 }
