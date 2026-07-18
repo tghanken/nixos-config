@@ -4,14 +4,12 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   lean-ctx = llm-agents.lean-ctx;
   unstable = import inputs.nixpkgs-unstable {
     system = pkgs.stdenv.hostPlatform.system;
-    config.allowUnfreePredicate =
-      pkg:
+    config.allowUnfreePredicate = pkg:
       builtins.elem (lib.getName pkg) [
         "antigravity"
         "code"
@@ -19,8 +17,7 @@ let
         "vscode"
       ];
   };
-in
-{
+in {
   imports = [
     flake.homeModules.desktop
   ];
@@ -70,7 +67,7 @@ in
             "git show"
             "nix flake check"
           ];
-          "kilo-code.deniedCommands" = [ ];
+          "kilo-code.deniedCommands" = [];
           "chat.mcp.enabled" = true;
           "git.enabled" = false;
         };
@@ -102,12 +99,12 @@ in
       proxy = "";
       language_models.lmstudio.api_url = "http://localhost:1234/v1";
       cli_default_open_behavior = "new_window";
-      agent.profiles = { };
+      agent.profiles = {};
       agent.default_model.provider = "lmstudio";
       agent.default_model.model = "qwen3.6-35b-a3b-mtp";
       agent.default_model.enable_thinking = false;
-      agent.favorite_models = [ ];
-      agent.model_parameters = [ ];
+      agent.favorite_models = [];
+      agent.model_parameters = [];
       agent_servers = {
         "pi-acp".type = "registry";
         dirac.default_config_options.mode = "auto";

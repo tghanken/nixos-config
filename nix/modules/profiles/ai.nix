@@ -14,6 +14,7 @@
       antigravity-cli
       opencode
       cursor-agent
+      codex
       jules
       kilocode-cli
       omp
@@ -25,7 +26,6 @@
       hermes-desktop
       openspec
       openspecui
-      # lean-ctx
       qmd
       nono
     ]);

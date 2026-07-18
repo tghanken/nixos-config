@@ -7,6 +7,5 @@ export.auto: false
 backup.enabled: false
 gc.endpoint_origin: inherited_city
 gc.endpoint_status: verified
-
 sync.remote: "git+ssh://git@github.com/tghanken/nixos-config.git"
 types.custom: molecule,convoy,message,event,gate,merge-request,agent,role,rig,session,spec,convergence,step
