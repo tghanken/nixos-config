@@ -16,9 +16,11 @@ Example on hercules:
 | `github-runners-tghanken` | `github_runner_tghanken.age` | `nixos-config`, `seneschal` |
 | `github-runners-actionable-work` | `github_runner_actionable_work.age` | `actionable` |
 
-Shared with the host (by design): read-only `/nix/store`, nix-daemon socket,
-and (optionally) the Docker socket. Isolation is for **tokens / runner state**,
-not for build sandboxing.
+Shared with the host (by design): read-only `/nix/store`, read-only nix-daemon
+socket, and (optionally) the Docker socket. Containers **do not** run their own
+`nix-daemon` when store sharing is enabled — a second daemon on the shared
+socket would replace the host socket and break Nix for the whole machine.
+Isolation is for **tokens / runner state**, not for build sandboxing.
 
 ## Authentication: what to use
 

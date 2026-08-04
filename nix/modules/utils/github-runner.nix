@@ -92,9 +92,10 @@ top@{
           hostPath = "/nix/store";
           isReadOnly = true;
         };
+        # Read-only so the container cannot replace the host's daemon socket.
         "/nix/var/nix/daemon-socket" = {
           hostPath = "/nix/var/nix/daemon-socket";
-          isReadOnly = false;
+          isReadOnly = true;
         };
       };
 
@@ -111,6 +112,14 @@ top@{
 
       programs.nix-ld.enable = true;
 
+      # Never run a container-local nix-daemon against the shared host socket —
+      # that replaces the host socket and breaks Nix for everyone on the machine.
+      nix.enable = !cfg.shareNixStore;
+      environment.systemPackages = optionals cfg.shareNixStore [pkgs.nix];
+      environment.variables = optionalAttrs cfg.shareNixStore {
+        NIX_REMOTE = "daemon";
+      };
+
       nix.settings = mkMerge [
         {
           experimental-features = [
@@ -118,7 +127,6 @@ top@{
             "flakes"
           ];
           trusted-users = [runnerUser];
-          allowed-users = [runnerUser];
           keep-outputs = true;
           keep-derivations = true;
         }
@@ -210,9 +218,9 @@ in {
       type = types.bool;
       default = true;
       description = ''
-        Bind-mount the host `/nix/store` (read-only) and nix-daemon socket into
-        each container, and set `NIX_REMOTE=daemon` so builds reuse the host
-        store and daemon.
+        Bind-mount the host `/nix/store` (read-only) and nix-daemon socket
+        (read-only) into each container, disable the in-container nix-daemon,
+        and set `NIX_REMOTE=daemon` so builds reuse the host store and daemon.
       '';
     };
 
@@ -269,10 +277,11 @@ in {
       ];
 
       # Host daemon performs substitutions when shareNixStore is on.
+      # trusted-users implies allowed; do not set allowed-users (would risk
+      # narrowing access if merged incorrectly).
       nix.settings = mkMerge [
         {
           trusted-users = [runnerUser];
-          allowed-users = [runnerUser];
         }
         (mkIf cfg.niks3.enable {
           substituters = [cfg.niks3.substituter];
