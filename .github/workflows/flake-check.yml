@@ -1,0 +1,19 @@
+name: flake-check
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  flake-check:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, nixos]
+    concurrency:
+      group: flake-check-${{ github.ref == 'refs/heads/main' && 'main' || github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: flake-check
+        run: nix run .#flake-check
