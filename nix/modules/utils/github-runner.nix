@@ -1,14 +1,14 @@
 /*
-  GitHub Actions self-hosted runners: one NixOS container per GitHub owner.
+GitHub Actions self-hosted runners: one NixOS container per GitHub owner.
 
-  Each owner gets its own container and agenix PAT so tokens are not shared
-  across personal vs org boundaries. See github-runner.md for auth setup.
+Each owner gets its own container and agenix PAT so tokens are not shared
+across personal vs org boundaries. See github-runner.md for auth setup.
 
-    just es github_runner_<owner>
+  just es github_runner_<owner>
 
-  Token file must be exactly one line with no trailing newline.
+Token file must be exactly one line with no trailing newline.
 */
-top@{
+top @ {
   config,
   lib,
   pkgs,
@@ -99,11 +99,7 @@ top@{
         };
       };
 
-    config = {
-      pkgs,
-      lib,
-      ...
-    }: {
+    config = {pkgs, ...}: {
       imports = [userModule];
 
       system.stateVersion = top.config.system.stateVersion;

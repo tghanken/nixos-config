@@ -9,6 +9,7 @@
     {
       networking.hostId = "12345678";
       boot.supportedFilesystems = ["zfs"];
+      boot.zfs.forceImportRoot = false;
       system.stateVersion = "25.11";
     }
   ];
