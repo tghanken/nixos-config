@@ -62,11 +62,6 @@
     nixos-facter-modules = {
       url = "github:numtide/nixos-facter-modules";
     };
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
-      inputs.nixlib.follows = "nixpkgs-lib";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -90,11 +85,27 @@
   };
 
   # Load the blueprint
-  outputs = inputs:
-    inputs.blueprint {
+  outputs = inputs: let
+    blueprint = inputs.blueprint {
       inherit inputs;
       prefix = "nix/";
       # Only support systems that have at least one host
       systems = ["x86_64-linux"];
+    };
+
+    # Blueprint leaves modules that take args beyond flake/inputs as store
+    # paths. `nix flake check` requires nixosModules/homeModules to be
+    # functions or attrsets, so import those leftovers only (do not remap
+    # blueprint.modules — duplicate imports break option uniqueness).
+    ensureModule = module:
+      if builtins.isPath module || builtins.isString module
+      then import module
+      else module;
+    mapModules = builtins.mapAttrs (_: ensureModule);
+  in
+    blueprint
+    // {
+      nixosModules = mapModules blueprint.nixosModules;
+      homeModules = mapModules blueprint.homeModules;
     };
 }

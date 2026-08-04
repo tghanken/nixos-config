@@ -128,7 +128,7 @@ in {
 
   home.packages = with pkgs;
     [
-      unstable.antigravity-fhs
+      unstable.antigravity-ide-fhs
       unstable.code-cursor-fhs
       gh
       nil

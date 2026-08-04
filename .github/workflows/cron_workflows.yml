@@ -6,17 +6,10 @@ on:
 jobs:
   lockfile:
     name: 🔒 Update flake.lock
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, nixos]
     steps:
       - name: 🖥️ Checkout git branch
-        uses: actions/checkout@v4
-      - name: 🦾 Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-        with:
-          determinate: true
-          extra-conf: |
-            substituters = https://nix-community.cachix.org https://cache.garnix.io https://cache.nixos.org/
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
+        uses: actions/checkout@v5
       - name: 🎟 Get GitHub App token
         uses: navikt/github-app-token-generator@b96ff604b2300989cd1105e3fad09199fca56681
         id: get-token
