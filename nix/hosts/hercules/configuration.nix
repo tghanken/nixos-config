@@ -24,6 +24,9 @@
     flake.modules.profiles.ai
     flake.modules.profiles.development
     flake.modules.profiles.gaming
+
+    # GitHub Actions runner container
+    flake.modules.utils.github-runner
   ];
 
   # Required for nixos-anywhere
@@ -32,4 +35,23 @@
   networking.hostId = "c1c4e9e4"; # Generate using `head -c 8 /etc/machine-id`
 
   system.stateVersion = "25.11"; # initial nixos state
+
+  services.github-runner-containers = {
+    enable = true;
+    runners = [
+      {
+        owner = "tghanken";
+        repo = "nixos-config";
+      }
+      {
+        owner = "tghanken";
+        repo = "seneschal";
+      }
+      {
+        owner = "actionable-work";
+        repo = "actionable";
+      }
+    ];
+    extraLabels = ["nixos"];
+  };
 }

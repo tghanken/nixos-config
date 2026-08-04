@@ -11,4 +11,6 @@ in {
   # "encrypted/netbird_remote_server.age".publicKeys = keys.remote-servers ++ keys.tghanken;
   "encrypted/nix_store_signing_key.age".publicKeys = keys.all;
   "encrypted/tailscale_key.age".publicKeys = keys.all;
+  "encrypted/github_runner_tghanken.age".publicKeys = [keys.hercules] ++ keys.tghanken;
+  "encrypted/github_runner_actionable_work.age".publicKeys = [keys.hercules] ++ keys.tghanken;
 }
