@@ -5,6 +5,9 @@ result-*
 # Ignore automatically generated direnv output
 .direnv
 
+# jj / git workspaces
+.worktrees/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
