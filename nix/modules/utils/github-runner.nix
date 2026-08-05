@@ -12,6 +12,7 @@ top @ {
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }: let
   inherit (lib) types mkOption mkIf mkMerge listToAttrs nameValuePair optionalAttrs optionals unique groupBy mapAttrsToList;
@@ -72,10 +73,6 @@ top @ {
 
   mkOwnerContainer = owner: runners: let
     tokenFile = config.age.secrets.${secretNameForOwner owner}.path;
-    niks3TokenFile = config.age.secrets.${niks3UploadSecret}.path;
-    runnerPackages =
-      cfg.extraPackages
-      ++ optionals cfg.niks3.uploader.enable [pkgs.niks3];
   in {
     autoStart = true;
     ephemeral = false;
@@ -102,12 +99,6 @@ top @ {
         # Read-only so the container cannot replace the host's daemon socket.
         "/nix/var/nix/daemon-socket" = {
           hostPath = "/nix/var/nix/daemon-socket";
-          isReadOnly = true;
-        };
-      }
-      // optionalAttrs cfg.niks3.uploader.enable {
-        ${niks3TokenFile} = {
-          hostPath = niks3TokenFile;
           isReadOnly = true;
         };
       };
@@ -145,11 +136,6 @@ top @ {
         })
       ];
 
-      systemd.tmpfiles.rules = optionals cfg.niks3.uploader.enable [
-        "d /var/lib/github-runner/.config/niks3 0750 ${runnerUser} ${runnerUser} -"
-        "L+ /var/lib/github-runner/.config/niks3/auth-token - - - - ${niks3TokenFile}"
-      ];
-
       users.groups.docker = mkIf cfg.dockerSocket (
         mkIf (hostDockerGid != null) {
           gid = hostDockerGid;
@@ -167,22 +153,15 @@ top @ {
             enable = true;
             name = "${runner.owner}-${runner.repo}-${hostName}";
             url = runnerUrl runner;
-            extraPackages = runnerPackages;
+            extraPackages = cfg.extraPackages;
             user = runnerUser;
             group = runnerUser;
             tokenFile = tokenFile;
             replace = true;
             extraLabels = labels;
-            extraEnvironment = mkMerge [
-              (optionalAttrs cfg.shareNixStore {
-                NIX_REMOTE = "daemon";
-              })
-              (optionalAttrs cfg.niks3.uploader.enable {
-                NIKS3_SERVER = cfg.niks3.uploader.server;
-                NIKS3_SERVER_URL = cfg.niks3.uploader.server;
-                NIKS3_AUTH_TOKEN_FILE = niks3TokenFile;
-              })
-            ];
+            extraEnvironment = optionalAttrs cfg.shareNixStore {
+              NIX_REMOTE = "daemon";
+            };
             serviceOverrides = {
               PrivateUsers = false;
               RestrictNamespaces = false;
@@ -190,9 +169,7 @@ top @ {
               BindPaths =
                 (optionals cfg.dockerSocket ["/var/run/docker.sock"])
                 ++ (optionals cfg.shareNixStore ["/nix/var/nix/daemon-socket"]);
-              BindReadOnlyPaths =
-                (optionals cfg.shareNixStore ["/nix/store"])
-                ++ (optionals cfg.niks3.uploader.enable [niks3TokenFile]);
+              BindReadOnlyPaths = optionals cfg.shareNixStore ["/nix/store"];
             };
           })
         runners
@@ -200,6 +177,8 @@ top @ {
     };
   };
 in {
+  imports = [inputs.niks3.nixosModules.niks3-auto-upload];
+
   options.services.github-runner-containers = {
     enable = mkOption {
       type = types.bool;
@@ -286,14 +265,15 @@ in {
           type = types.bool;
           default = true;
           description = ''
-            Provide the niks3 CLI and upload credentials to runner jobs.
-            Requires encrypted/niks3_upload_token.age (see github-runner.md).
+            Upload runner builds to niks3 via the niks3-hook auto-upload daemon
+            (post-build-hook on the host nix-daemon). Requires
+            encrypted/niks3_upload_token.age and shareNixStore (see github-runner.md).
           '';
         };
         server = mkOption {
           type = types.str;
           default = niks3Substituter;
-          description = "niks3 server URL for uploads (`NIKS3_SERVER`).";
+          description = "niks3 server URL for the auto-upload daemon.";
         };
       };
     };
@@ -312,6 +292,10 @@ in {
           assertion = !cfg.dockerSocket || config.virtualisation.docker.enable;
           message = "services.github-runner-containers.dockerSocket requires virtualisation.docker.enable";
         }
+        {
+          assertion = !cfg.niks3.uploader.enable || cfg.shareNixStore;
+          message = "services.github-runner-containers.niks3.uploader requires shareNixStore (host nix-daemon post-build-hook)";
+        }
       ];
 
       # Host daemon performs substitutions when shareNixStore is on.
@@ -326,6 +310,12 @@ in {
           trusted-public-keys = [cfg.niks3.publicKey];
         })
       ];
+
+      services.niks3-auto-upload = mkIf cfg.niks3.uploader.enable {
+        enable = true;
+        serverUrl = cfg.niks3.uploader.server;
+        authTokenFile = config.age.secrets.${niks3UploadSecret}.path;
+      };
 
       age.secrets =
         listToAttrs (
