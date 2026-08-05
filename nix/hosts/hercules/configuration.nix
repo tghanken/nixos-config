@@ -42,14 +42,17 @@
       {
         owner = "tghanken";
         repo = "nixos-config";
+        num = 4;
       }
       {
         owner = "tghanken";
         repo = "seneschal";
+        num = 4;
       }
       {
         owner = "actionable-work";
         repo = "actionable";
+        num = 4;
       }
     ];
     extraLabels = ["nixos"];

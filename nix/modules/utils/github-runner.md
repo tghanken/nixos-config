@@ -7,9 +7,10 @@ Self-hosted runners for hercules (and any host that imports
 
 - **One NixOS container per GitHub owner** (`tghanken`, `actionable-work`, …)
 - **One agenix PAT per owner** — mounted only into that owner's container
-- **One `services.github-runners` unit per repository** inside the owner container
+- **`num` ephemeral `services.github-runners` units per repository** inside
+  the owner container (default `num = 1`)
 
-Example on hercules:
+Example on hercules (`num = 4` each):
 
 | Container | PAT secret | Repos |
 |---|---|---|
@@ -125,6 +126,26 @@ jobs:
 
 Do not add a redundant `linux` label.
 
+Runners are **ephemeral** (`ephemeral = true`): each job gets a fresh
+registration, which avoids stale credentials after GitHub deletes idle
+runners. GitHub runner names look like
+`tghanken-nixos-config-hercules-01` (zero-padded index).
+
+## Parallelism (`num`)
+
+Set `num` on a repo entry to register that many parallel runners (same
+labels, same PAT). Hercules uses `num = 4`.
+
+```nix
+services.github-runner-containers.runners = [
+  {
+    owner = "tghanken";
+    repo = "nixos-config";
+    num = 4;
+  }
+];
+```
+
 ## Deploy checklist
 
 1. Create the two fine-grained PATs with the scopes above
@@ -132,13 +153,18 @@ Do not add a redundant `linux` label.
 3. Deploy hercules
 4. Confirm containers: `machinectl list` → `github-runners-tghanken`, `github-runners-actionable_work`
 5. Confirm runners under each repo’s **Settings → Actions → Runners**
+   (expect `num` online runners per repo; remove any old unsuffixed names)
 
 ## Adding a repo
 
 ```nix
 services.github-runner-containers.runners = [
   # …
-  { owner = "tghanken"; repo = "new-repo"; }
+  {
+    owner = "tghanken";
+    repo = "new-repo";
+    num = 2;
+  }
 ];
 ```
 
