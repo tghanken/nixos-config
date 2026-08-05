@@ -152,17 +152,15 @@ Runners pull from niks3 via the `services.github-runner-containers.niks3`
 substituter (enabled by default). Upload support is also on by default
 (`niks3.uploader.enable`).
 
-When the uploader is enabled, each runner job gets:
+When the uploader is enabled, the **host** nix-daemon runs the
+[`niks3-hook` auto-upload daemon](https://github.com/Mic92/niks3/wiki/Auto-Upload):
+`niks3-hook serve` queues paths over a unix socket and uploads in the
+background; every build triggers `niks3-hook send` via Nix's
+`post-build-hook`. This requires `shareNixStore` (the default) so runner jobs
+use the host daemon.
 
-- `niks3` on `PATH`
-- `NIKS3_SERVER` / `NIKS3_SERVER_URL` set to the upload server
-- `NIKS3_AUTH_TOKEN_FILE` pointing at the agenix secret
-- `~/.config/niks3/auth-token` symlinked to the same secret (for
-  `nix-fast-build` and `niks3-warm-intermediates`)
-
-Workflows no longer need a "Setup niks3 cache" step on self-hosted runners.
-They still need `NIKS3_SERVER` in job `env` if the flake entrypoint gates on
-it (e.g. seneschal's `flake-check`).
+Workflows do not need upload steps or `NIKS3_*` environment variables on
+self-hosted runners — builds are uploaded automatically after they finish.
 
 ### Upload token
 
@@ -174,6 +172,13 @@ just es niks3_upload_token
 ```
 
 Secret file: `encrypted/niks3_upload_token.age`
+
+After deploy, verify the daemon:
+
+```bash
+systemctl status niks3-auto-upload.socket
+journalctl -fu niks3-auto-upload.service
+```
 
 To disable uploads without removing the substituter:
 
