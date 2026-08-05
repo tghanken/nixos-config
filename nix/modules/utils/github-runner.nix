@@ -15,7 +15,7 @@ top @ {
   inputs,
   ...
 }: let
-  inherit (lib) types mkOption mkIf mkMerge listToAttrs nameValuePair optionalAttrs optionals unique groupBy mapAttrsToList;
+  inherit (lib) types mkOption mkIf mkMerge listToAttrs nameValuePair optionalAttrs optionals unique groupBy mapAttrsToList concatMap range;
   cfg = config.services.github-runner-containers;
 
   runnerUser = "github-runner";
@@ -24,10 +24,23 @@ top @ {
   sanitizeSecret = s: lib.replaceStrings ["-" "."] ["_" "_"] s;
   # nixos-containers disallow underscores in names
   sanitizeContainer = s: lib.replaceStrings ["_" "."] ["-" "-"] s;
+  # Poor man's zero-padding for indices up to 99 (matches github-nix-ci).
+  paddedNum = n:
+    if n < 10
+    then "0${builtins.toString n}"
+    else builtins.toString n;
   secretNameForOwner = owner: "github_runner_${sanitizeSecret owner}";
   containerNameForOwner = owner: "github-runners-${sanitizeContainer owner}";
-  runnerServiceName = runner: "${sanitizeSecret runner.owner}-${sanitizeSecret runner.repo}";
+  runnerServiceName = runner: index: "${sanitizeSecret runner.owner}-${sanitizeSecret runner.repo}-${paddedNum index}";
+  runnerGithubName = runner: index: "${runner.owner}-${runner.repo}-${hostName}-${paddedNum index}";
   runnerUrl = runner: "https://github.com/${runner.owner}/${runner.repo}";
+  # Expand each declaration into `num` concrete runner instances.
+  expandRunners = runners:
+    concatMap (
+      runner:
+        map (index: {inherit runner index;}) (range 1 runner.num)
+    )
+    runners;
 
   owners = unique (map (r: r.owner) cfg.runners);
   runnersByOwner = groupBy (r: r.owner) cfg.runners;
@@ -67,6 +80,14 @@ top @ {
         type = types.listOf types.str;
         default = [];
         description = "Extra labels for this runner (merged with module defaults).";
+      };
+      num = mkOption {
+        type = types.ints.positive;
+        default = 1;
+        description = ''
+          Number of parallel ephemeral runners to register for this repository.
+          Each instance gets a unique name suffix (`-01`, `-02`, …).
+        '';
       };
     };
   };
@@ -114,10 +135,13 @@ top @ {
 
       # Never run a container-local nix-daemon against the shared host socket —
       # that replaces the host socket and breaks Nix for everyone on the machine.
+      # With nix.enable=false, NixOS does not write /etc/nix/nix.conf, so the
+      # client CLI would lack experimental-features unless we set NIX_CONFIG.
       nix.enable = !cfg.shareNixStore;
       environment.systemPackages = optionals cfg.shareNixStore [pkgs.nix];
       environment.variables = optionalAttrs cfg.shareNixStore {
         NIX_REMOTE = "daemon";
+        NIX_CONFIG = "experimental-features = nix-command flakes";
       };
 
       nix.settings = mkMerge [
@@ -143,24 +167,31 @@ top @ {
       );
 
       services.github-runners = listToAttrs (
-        map (runner: let
+        map ({
+          runner,
+          index,
+        }: let
           labels =
             cfg.extraLabels
             ++ [hostName]
             ++ runner.extraLabels;
         in
-          nameValuePair (runnerServiceName runner) {
+          nameValuePair (runnerServiceName runner index) {
             enable = true;
-            name = "${runner.owner}-${runner.repo}-${hostName}";
+            name = runnerGithubName runner index;
             url = runnerUrl runner;
             extraPackages = cfg.extraPackages;
             user = runnerUser;
             group = runnerUser;
             tokenFile = tokenFile;
             replace = true;
+            ephemeral = true;
             extraLabels = labels;
             extraEnvironment = optionalAttrs cfg.shareNixStore {
               NIX_REMOTE = "daemon";
+              # Jobs inherit this; required because shareNixStore disables
+              # container nix.conf generation (nix.enable = false).
+              NIX_CONFIG = "experimental-features = nix-command flakes";
             };
             serviceOverrides = {
               PrivateUsers = false;
@@ -172,7 +203,7 @@ top @ {
               BindReadOnlyPaths = optionals cfg.shareNixStore ["/nix/store"];
             };
           })
-        runners
+        (expandRunners runners)
       );
     };
   };
@@ -191,6 +222,7 @@ in {
       default = [];
       description = ''
         Runners to register. Grouped by `owner` into one container each.
+        Each entry may set `num` (default 1) for parallel ephemeral runners.
         Each owner needs encrypted/github_runner_<owner>.age
         (hyphens/dots become underscores). See github-runner.md.
       '';
@@ -198,6 +230,7 @@ in {
         {
           owner = "tghanken";
           repo = "nixos-config";
+          num = 2;
         }
         {
           owner = "actionable-work";
