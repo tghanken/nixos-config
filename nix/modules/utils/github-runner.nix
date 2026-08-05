@@ -33,6 +33,7 @@ top @ {
 
   niks3Substituter = "https://niks3.actionable-internal.work";
   niks3PublicKey = "actionable-niks3:A3EpGS6+W9zj0r6tY3KPoODoBRELq70j+dkbhhgi7aQ=";
+  niks3UploadSecret = "niks3_upload_token";
 
   hostDockerGid = config.users.groups.docker.gid or null;
   hostName = config.networking.hostName;
@@ -41,6 +42,8 @@ top @ {
     users.users.${runnerUser} = {
       isSystemUser = true;
       group = runnerUser;
+      home = "/var/lib/github-runner";
+      createHome = true;
       description = "GitHub Actions runner";
       extraGroups = optionals cfg.dockerSocket ["docker"];
     };
@@ -69,6 +72,10 @@ top @ {
 
   mkOwnerContainer = owner: runners: let
     tokenFile = config.age.secrets.${secretNameForOwner owner}.path;
+    niks3TokenFile = config.age.secrets.${niks3UploadSecret}.path;
+    runnerPackages =
+      cfg.extraPackages
+      ++ optionals cfg.niks3.uploader.enable [pkgs.niks3];
   in {
     autoStart = true;
     ephemeral = false;
@@ -95,6 +102,12 @@ top @ {
         # Read-only so the container cannot replace the host's daemon socket.
         "/nix/var/nix/daemon-socket" = {
           hostPath = "/nix/var/nix/daemon-socket";
+          isReadOnly = true;
+        };
+      }
+      // optionalAttrs cfg.niks3.uploader.enable {
+        ${niks3TokenFile} = {
+          hostPath = niks3TokenFile;
           isReadOnly = true;
         };
       };
@@ -132,6 +145,11 @@ top @ {
         })
       ];
 
+      systemd.tmpfiles.rules = optionals cfg.niks3.uploader.enable [
+        "d /var/lib/github-runner/.config/niks3 0750 ${runnerUser} ${runnerUser} -"
+        "L+ /var/lib/github-runner/.config/niks3/auth-token - - - - ${niks3TokenFile}"
+      ];
+
       users.groups.docker = mkIf cfg.dockerSocket (
         mkIf (hostDockerGid != null) {
           gid = hostDockerGid;
@@ -149,15 +167,22 @@ top @ {
             enable = true;
             name = "${runner.owner}-${runner.repo}-${hostName}";
             url = runnerUrl runner;
-            inherit (cfg) extraPackages;
+            extraPackages = runnerPackages;
             user = runnerUser;
             group = runnerUser;
             tokenFile = tokenFile;
             replace = true;
             extraLabels = labels;
-            extraEnvironment = optionalAttrs cfg.shareNixStore {
-              NIX_REMOTE = "daemon";
-            };
+            extraEnvironment = mkMerge [
+              (optionalAttrs cfg.shareNixStore {
+                NIX_REMOTE = "daemon";
+              })
+              (optionalAttrs cfg.niks3.uploader.enable {
+                NIKS3_SERVER = cfg.niks3.uploader.server;
+                NIKS3_SERVER_URL = cfg.niks3.uploader.server;
+                NIKS3_AUTH_TOKEN_FILE = niks3TokenFile;
+              })
+            ];
             serviceOverrides = {
               PrivateUsers = false;
               RestrictNamespaces = false;
@@ -165,7 +190,9 @@ top @ {
               BindPaths =
                 (optionals cfg.dockerSocket ["/var/run/docker.sock"])
                 ++ (optionals cfg.shareNixStore ["/nix/var/nix/daemon-socket"]);
-              BindReadOnlyPaths = optionals cfg.shareNixStore ["/nix/store"];
+              BindReadOnlyPaths =
+                (optionals cfg.shareNixStore ["/nix/store"])
+                ++ (optionals cfg.niks3.uploader.enable [niks3TokenFile]);
             };
           })
         runners
@@ -254,6 +281,21 @@ in {
         default = niks3PublicKey;
         description = "niks3 trusted public key.";
       };
+      uploader = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Provide the niks3 CLI and upload credentials to runner jobs.
+            Requires encrypted/niks3_upload_token.age (see github-runner.md).
+          '';
+        };
+        server = mkOption {
+          type = types.str;
+          default = niks3Substituter;
+          description = "niks3 server URL for uploads (`NIKS3_SERVER`).";
+        };
+      };
     };
   };
 
@@ -285,14 +327,21 @@ in {
         })
       ];
 
-      age.secrets = listToAttrs (
-        map (owner:
-          nameValuePair (secretNameForOwner owner) {
-            file = "${encryptedPath}/${secretNameForOwner owner}.age";
+      age.secrets =
+        listToAttrs (
+          map (owner:
+            nameValuePair (secretNameForOwner owner) {
+              file = "${encryptedPath}/${secretNameForOwner owner}.age";
+              mode = "0440";
+            })
+          owners
+        )
+        // optionalAttrs cfg.niks3.uploader.enable {
+          ${niks3UploadSecret} = {
+            file = "${encryptedPath}/${niks3UploadSecret}.age";
             mode = "0440";
-          })
-        owners
-      );
+          };
+        };
 
       containers = listToAttrs (
         mapAttrsToList (owner: runners:
