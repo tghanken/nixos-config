@@ -145,3 +145,38 @@ services.github-runner-containers.runners = [
 If the owner is new, add `encrypted/github_runner_<owner>.age` to `secrets.nix`
 and create the PAT/secret. If the owner already exists, extend that owner’s
 fine-grained PAT repository list to include the new repo.
+
+## niks3 binary cache
+
+Runners pull from niks3 via the `services.github-runner-containers.niks3`
+substituter (enabled by default). Upload support is also on by default
+(`niks3.uploader.enable`).
+
+When the uploader is enabled, each runner job gets:
+
+- `niks3` on `PATH`
+- `NIKS3_SERVER` / `NIKS3_SERVER_URL` set to the upload server
+- `NIKS3_AUTH_TOKEN_FILE` pointing at the agenix secret
+- `~/.config/niks3/auth-token` symlinked to the same secret (for
+  `nix-fast-build` and `niks3-warm-intermediates`)
+
+Workflows no longer need a "Setup niks3 cache" step on self-hosted runners.
+They still need `NIKS3_SERVER` in job `env` if the flake entrypoint gates on
+it (e.g. seneschal's `flake-check`).
+
+### Upload token
+
+Create the agenix secret with the niks3 API token (exactly one line, no
+trailing newline — same format as the GitHub runner PATs):
+
+```bash
+just es niks3_upload_token
+```
+
+Secret file: `encrypted/niks3_upload_token.age`
+
+To disable uploads without removing the substituter:
+
+```nix
+services.github-runner-containers.niks3.uploader.enable = false;
+```

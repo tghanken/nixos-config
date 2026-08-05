@@ -53,5 +53,6 @@
       }
     ];
     extraLabels = ["nixos"];
+    niks3.uploader.server = "https://niks3-server.actionable-internal.work";
   };
 }
