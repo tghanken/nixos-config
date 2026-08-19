@@ -64,6 +64,74 @@ top @ {
     users.groups.${runnerUser} = {};
   };
 
+  # nix-fast-build defaults --eval-workers to nproc and always passes
+  # --workers through to nix-eval-jobs. There is no env var for that
+  # count, but it does honor NIX_FAST_BUILD_EVAL_JOBS as the binary
+  # (PATH alone is not enough: nix-fast-build prefixes its own copy).
+  # Clamp --workers here so CI YAML does not have to change.
+  nixEvalJobsCapped = pkgs.writeShellApplication {
+    name = "nix-eval-jobs";
+    runtimeInputs = [pkgs.coreutils];
+    text = ''
+      cap=${toString cfg.evalWorkersMax}
+      fallback=${lib.getExe pkgs.nix-eval-jobs}
+
+      self_dir=$(dirname "$(readlink -f -- "$0")")
+      filtered=()
+      IFS=':' read -ra path_parts <<< "$PATH"
+      for p in "''${path_parts[@]}"; do
+        if [[ "$p" != "$self_dir" && -n "$p" ]]; then
+          filtered+=("$p")
+        fi
+      done
+      old_ifs=$IFS
+      IFS=:
+      PATH="''${filtered[*]}"
+      IFS=$old_ifs
+      export PATH
+
+      args=()
+      while (( $# > 0 )); do
+        case "$1" in
+          --workers)
+            if (( $# < 2 )); then
+              args+=("$1")
+              shift
+              break
+            fi
+            n="$2"
+            shift 2
+            if [[ "$n" =~ ^[0-9]+$ ]] && (( 10#$n > cap )); then
+              n="$cap"
+            fi
+            args+=(--workers "$n")
+            ;;
+          --workers=*)
+            n="''${1#--workers=}"
+            shift
+            if [[ "$n" =~ ^[0-9]+$ ]] && (( 10#$n > cap )); then
+              n="$cap"
+            fi
+            args+=(--workers "$n")
+            ;;
+          --)
+            args+=("$@")
+            break
+            ;;
+          *)
+            args+=("$1")
+            shift
+            ;;
+        esac
+      done
+
+      if command -v nix-eval-jobs >/dev/null 2>&1; then
+        exec nix-eval-jobs "''${args[@]}"
+      fi
+      exec "$fallback" "''${args[@]}"
+    '';
+  };
+
   runnerSubmodule = types.submodule {
     options = {
       owner = mkOption {
@@ -180,19 +248,23 @@ top @ {
             enable = true;
             name = runnerGithubName runner index;
             url = runnerUrl runner;
-            extraPackages = cfg.extraPackages;
+            extraPackages = [nixEvalJobsCapped pkgs.nix-eval-jobs] ++ cfg.extraPackages;
             user = runnerUser;
             group = runnerUser;
             tokenFile = tokenFile;
             replace = true;
             ephemeral = true;
             extraLabels = labels;
-            extraEnvironment = optionalAttrs cfg.shareNixStore {
-              NIX_REMOTE = "daemon";
-              # Jobs inherit this; required because shareNixStore disables
-              # container nix.conf generation (nix.enable = false).
-              NIX_CONFIG = "experimental-features = nix-command flakes";
-            };
+            extraEnvironment =
+              {
+                NIX_FAST_BUILD_EVAL_JOBS = lib.getExe nixEvalJobsCapped;
+              }
+              // optionalAttrs cfg.shareNixStore {
+                NIX_REMOTE = "daemon";
+                # Jobs inherit this; required because shareNixStore disables
+                # container nix.conf generation (nix.enable = false).
+                NIX_CONFIG = "experimental-features = nix-command flakes";
+              };
             serviceOverrides = {
               PrivateUsers = false;
               RestrictNamespaces = false;
@@ -275,6 +347,16 @@ in {
         cachix
       ];
       description = "Packages available to GitHub Actions jobs on the runner.";
+    };
+
+    evalWorkersMax = mkOption {
+      type = types.ints.positive;
+      default = 8;
+      description = ''
+        Cap for `nix-eval-jobs --workers`. nix-fast-build defaults
+        `--eval-workers` to nproc and always forwards it; this wrapper
+        clamps the value so CI workflows do not need `--eval-workers`.
+      '';
     };
 
     niks3 = {
