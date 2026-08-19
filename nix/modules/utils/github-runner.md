@@ -146,6 +146,21 @@ services.github-runner-containers.runners = [
 ];
 ```
 
+## Eval workers (`evalWorkersMax`)
+
+`nix-fast-build` defaults `--eval-workers` to nproc (32 on hercules) and
+always passes that as `nix-eval-jobs --workers`. The runner injects a
+wrapper via `NIX_FAST_BUILD_EVAL_JOBS` (and PATH) that clamps `--workers`
+to `evalWorkersMax` (default **8**) so workflows do not need to change.
+
+```nix
+services.github-runner-containers.evalWorkersMax = 8;
+```
+
+Does not apply if a workflow passes `--nix-eval-jobs /nix/store/…` (that
+overrides the env var). Direct `nix-eval-jobs` calls without `--workers`
+keep the upstream default of 1.
+
 ## Deploy checklist
 
 1. Create the two fine-grained PATs with the scopes above
