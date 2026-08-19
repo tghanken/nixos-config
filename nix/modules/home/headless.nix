@@ -14,12 +14,6 @@
   programs.bash = {
     enable = true;
     enableCompletion = true;
-    initExtra = ''
-      # lean-ctx shell hook
-      if [ -f "$HOME/.config/lean-ctx/shell-hook.bash" ]; then
-        . "$HOME/.config/lean-ctx/shell-hook.bash"
-      fi
-    '';
   };
 
   # Packages that should be installed to the user profile.
