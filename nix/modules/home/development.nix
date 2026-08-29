@@ -12,54 +12,12 @@
       builtins.elem (lib.getName pkg) [
         "antigravity"
         "antigravity-ide"
-        "code"
-        "cursor"
-        "vscode"
       ];
   };
 in {
   imports = [
     flake.homeModules.desktop
   ];
-
-  programs.vscode = {
-    enable = true;
-    package = unstable.vscode-fhs;
-    profiles = {
-      default = {
-        enableUpdateCheck = false;
-        extensions = with pkgs.vscode-extensions; [
-          # Docker
-          ms-azuretools.vscode-containers
-
-          # AI assistance
-          kilocode.kilo-code
-
-          # Nix development
-          jnoortheen.nix-ide
-
-          # Rust development
-          rust-lang.rust-analyzer
-          tamasfe.even-better-toml
-
-          # Utilities
-          gruntfuggly.todo-tree
-        ];
-        userSettings = {
-          "files.autoSave" = "afterDelay";
-          "kilo-code.allowedCommands" = [
-            "git log"
-            "git diff"
-            "git show"
-            "nix flake check"
-          ];
-          "kilo-code.deniedCommands" = [];
-          "chat.mcp.enabled" = true;
-          "git.enabled" = false;
-        };
-      };
-    };
-  };
 
   programs.zed-editor = {
     enable = true;
@@ -76,6 +34,7 @@ in {
       "html"
       "css"
       "terraform"
+      "sql"
     ];
     userSettings = {
       autosave.after_delay.milliseconds = 1000;
@@ -96,8 +55,6 @@ in {
         dirac.default_config_options.mode = "auto";
         dirac.default_config_options.reasoning_effort = "none";
         dirac.type = "registry";
-        cursor.default_config_options.model = "composer-2.5[fast=false]";
-        cursor.type = "registry";
       };
       base_keymap = "VSCode";
       load_direnv = "direct";
@@ -114,7 +71,6 @@ in {
   home.packages = with pkgs;
     [
       unstable.antigravity-ide-fhs
-      unstable.code-cursor-fhs
       gh
       nil
       nixd
