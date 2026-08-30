@@ -46,8 +46,8 @@ in {
       cli_default_open_behavior = "new_window";
       agent.profiles = {};
       agent.default_model.provider = "lmstudio";
-      agent.default_model.model = "qwen3.6-35b-a3b-mtp";
-      agent.default_model.enable_thinking = false;
+      agent.default_model.model = "qwen3.8-flash-next";
+      agent.default_model.enable_thinking = true;
       agent.favorite_models = [];
       agent.model_parameters = [];
       agent_servers = {
