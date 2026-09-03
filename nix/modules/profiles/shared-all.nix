@@ -11,6 +11,9 @@
     # flake.modules.builders.client
     flake.modules.secrets.base
 
+    flake.nixosModules.impermanence
+    flake.nixosModules.restic
+
     flake.modules.utils.auto-upgrade
     flake.modules.utils.earlyoom
   ];

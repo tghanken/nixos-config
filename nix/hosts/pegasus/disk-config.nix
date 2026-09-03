@@ -75,6 +75,7 @@
         var = {
           type = "zfs_fs";
           mountpoint = "/var";
+          options."com.sun:auto-snapshot" = "false";
         };
         home = {
           type = "zfs_fs";
