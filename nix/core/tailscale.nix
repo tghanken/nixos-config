@@ -29,6 +29,12 @@ in {
     # enable the tailscale service
     services.tailscale.enable = true;
 
+    environment.persistence."/persist" = {
+      directories = [
+        "/var/lib/tailscale"
+      ];
+    };
+
     # assert that only one of auth_key_path or auth_key is set
     assertions = [
       {

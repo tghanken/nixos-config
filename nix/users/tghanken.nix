@@ -61,4 +61,19 @@ in {
     home.stateVersion = "25.11";
     programs.home-manager.enable = true;
   };
+
+  environment.persistence."/persist".users.tghanken = {
+    directories = [
+      "Documents"
+      "Downloads"
+      "Pictures"
+      "Repos"
+      ".ssh"
+      ".gnupg"
+    ];
+    files = [
+      ".zsh_history"
+      ".bash_history"
+    ];
+  };
 }

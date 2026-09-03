@@ -3,6 +3,7 @@
     ./system.nix
     ./headless.nix
     ./tailscale.nix
+    ./impermanence.nix
     ./secrets
   ];
 

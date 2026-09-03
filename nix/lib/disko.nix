@@ -1,4 +1,17 @@
-{lib, ...}: {
+{lib, ...}: rec {
+  /*
+  Sanitizes evaluated disko.devices attrset for clean JSON serialization,
+  recursively stripping internal private attributes prefixed with `_`.
+  */
+  sanitizeDiskoDevices = val:
+    if builtins.isAttrs val
+    then
+      builtins.mapAttrs (_: sanitizeDiskoDevices)
+      (removeAttrs val (builtins.filter (k: builtins.substring 0 1 k == "_") (builtins.attrNames val)))
+    else if builtins.isList val
+    then map sanitizeDiskoDevices val
+    else val;
+
   /*
   Generates a standardized disko ZFS configuration.
 
@@ -177,27 +190,58 @@
           compression = "lz4";
           atime = "off";
           recordsize = "64K";
-          "com.sun:auto-snapshot" = "true";
+          "com.sun:auto-snapshot" = "false";
         };
-        mountpoint = "/";
+        options = {
+          ashift = "12";
+          autotrim = "on";
+        };
+        mountpoint = null;
         datasets = {
-          nix = {
-            type = "zfs_fs";
-            mountpoint = "/nix";
-            options."com.sun:auto-snapshot" = "false";
-          };
-          var = {
-            type = "zfs_fs";
-            mountpoint = "/var";
-          };
-          home = {
-            type = "zfs_fs";
-            mountpoint = "/home";
-          };
           reserved = {
             type = "zfs_fs";
-            options.refreservation = "10G";
-            options.mountpoint = "none";
+            options = {
+              mountpoint = "none";
+              refreservation = "15G";
+            };
+          };
+          local = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              "com.sun:auto-snapshot" = "false";
+            };
+          };
+          "local/root" = {
+            type = "zfs_fs";
+            mountpoint = "/";
+            options."com.sun:auto-snapshot" = "false";
+            postCreateHook = "zfs list -t snapshot -H -o name | grep -E '^zroot/local/root@blank$' || zfs snapshot zroot/local/root@blank";
+          };
+          "local/nix" = {
+            type = "zfs_fs";
+            mountpoint = "/nix";
+            options = {
+              atime = "off";
+              "com.sun:auto-snapshot" = "false";
+            };
+          };
+          "local/var" = {
+            type = "zfs_fs";
+            mountpoint = "/var";
+            options."com.sun:auto-snapshot" = "false";
+          };
+          safe = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              "com.sun:auto-snapshot" = "true";
+            };
+          };
+          "safe/persist" = {
+            type = "zfs_fs";
+            mountpoint = "/persist";
+            options."com.sun:auto-snapshot" = "true";
           };
         };
       };

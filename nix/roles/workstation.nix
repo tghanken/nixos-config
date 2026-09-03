@@ -90,4 +90,24 @@
     yubikey-manager
     age-plugin-yubikey
   ];
+
+  disko.devices.zpool.zroot.datasets."local/cache" = {
+    type = "zfs_fs";
+    mountpoint = "/home/tghanken/.cache";
+    options."com.sun:auto-snapshot" = "false";
+  };
+
+  environment.persistence."/persist" = {
+    directories = [
+      "/var/lib/bluetooth"
+    ];
+    users.tghanken.directories = [
+      ".mozilla"
+      ".config/spotify"
+      ".config/google-chrome"
+      ".config/chromium"
+      ".config/ghostty"
+      ".config/Slack"
+    ];
+  };
 }

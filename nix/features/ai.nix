@@ -20,4 +20,10 @@
     # Currently ai profile is only used on amd. If I get a nvidia device, refactor this.
     rocmPackages.clr.icd
   ];
+
+  disko.devices.zpool.zroot.datasets."local/models" = {
+    type = "zfs_fs";
+    mountpoint = "/data/models";
+    options."com.sun:auto-snapshot" = "false";
+  };
 }

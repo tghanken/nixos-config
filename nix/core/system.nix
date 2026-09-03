@@ -17,7 +17,7 @@
     kernelPackages = pkgs.linuxPackages_6_18; # Fixes broken zfs package. See https://github.com/NixOS/nixos-hardware/issues/1675
     zfs = {
       package = pkgs.zfs_2_4; # Also needed for kernel fixes
-      devNodes = "/dev/disk/by-partlabel";
+      devNodes = "/dev/disk/by-id";
       forceImportRoot = false;
     };
     loader.grub = {
@@ -44,6 +44,12 @@
   networking.networkmanager.enable = true;
   networking.useNetworkd = true;
   networking.dhcpcd.enable = false;
+
+  environment.persistence."/persist" = {
+    directories = [
+      "/etc/NetworkManager/system-connections"
+    ];
+  };
 
   # Determinate Nix daemon tuning
   environment.etc."nix/nix.custom.conf".text = "eval-cores = 0";

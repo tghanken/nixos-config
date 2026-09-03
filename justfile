@@ -39,3 +39,9 @@ deploy-all:
 [group("Deployment")]
 deploy-dry TARGET="@server":
     @colmena build --impure --on "{{ TARGET }}"
+
+[group("Storage")]
+update-disk-layouts:
+    @nix run .#update-disk-layouts
+
+alias udl := update-disk-layouts

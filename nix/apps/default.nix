@@ -16,10 +16,16 @@
       inherit pkgs;
       lib = inputs.nixpkgs.lib;
     };
+
+    updateDiskLayoutsPkg = import ./update-disk-layouts.nix {
+      inherit pkgs;
+      inherit (config) self;
+    };
   in {
     packages = {
       reimage-host = reimageHostPkg;
       ingest-host-keys = ingestHostKeysPkg;
+      update-disk-layouts = updateDiskLayoutsPkg;
     };
 
     apps = {
@@ -30,6 +36,10 @@
       ingest-host-keys = {
         type = "app";
         program = "${ingestHostKeysPkg}/bin/ingest-host-keys";
+      };
+      update-disk-layouts = {
+        type = "app";
+        program = "${updateDiskLayoutsPkg}/bin/update-disk-layouts";
       };
     };
   };

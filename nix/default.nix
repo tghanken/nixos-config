@@ -16,9 +16,11 @@
     };
     services = {
       github-runner = ./services/github-runner.nix;
+      restic-rest-server = ./services/restic-rest-server.nix;
     };
     features = {
       ai = ./features/ai.nix;
+      backup = ./features/backup.nix;
       development = ./features/development.nix;
       gaming = ./features/gaming.nix;
     };

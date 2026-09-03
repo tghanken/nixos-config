@@ -42,6 +42,12 @@
         system.autoUpgrade.enable = false;
         system.stateVersion = "25.11";
       }
+      {
+        options.environment.persistence = inputs.nixpkgs.lib.mkOption {
+          type = inputs.nixpkgs.lib.types.attrsOf inputs.nixpkgs.lib.types.anything;
+          default = {};
+        };
+      }
     ];
   };
 in

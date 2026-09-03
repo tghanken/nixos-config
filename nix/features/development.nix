@@ -98,4 +98,33 @@ in {
         pi
       ]);
   };
+
+  disko.devices.zpool.zroot.datasets = {
+    "local/docker" = {
+      type = "zfs_fs";
+      mountpoint = "/var/lib/docker";
+      options."com.sun:auto-snapshot" = "false";
+    };
+    "local/cargo" = {
+      type = "zfs_fs";
+      mountpoint = "/home/tghanken/.cargo";
+      options."com.sun:auto-snapshot" = "false";
+    };
+    "local/pnpm" = {
+      type = "zfs_fs";
+      mountpoint = "/home/tghanken/.local/share/pnpm";
+      options."com.sun:auto-snapshot" = "false";
+    };
+    "local/bun" = {
+      type = "zfs_fs";
+      mountpoint = "/home/tghanken/.bun";
+      options."com.sun:auto-snapshot" = "false";
+    };
+  };
+
+  environment.persistence."/persist".users.tghanken.directories = [
+    ".local/share/direnv"
+    ".config/gh"
+    ".config/zed"
+  ];
 }

@@ -17,6 +17,7 @@ in
         pkgs.openssh
         pkgs.coreutils
         pkgs.git
+        pkgs.restic
         nixos-anywhere
       ]
       ++ lib.optional (agenix-rekey-pkg != null) agenix-rekey-pkg;
@@ -29,7 +30,8 @@ in
       Usage: reimage-host <host> [target] [options] [-- <extra nixos-anywhere args...>]
 
       Idempotently re-images a host while preserving its SSH host identity and
-      agenix-rekey decryption capability across full disk wipes.
+      agenix-rekey decryption capability across full disk wipes. Automatically
+      detects and restores the latest Restic backup into /persist if available.
 
       Arguments:
         host              Name of the host in self.nixosConfigurations (e.g. arges, hercules)
@@ -38,16 +40,11 @@ in
       Options:
         --kexec           Enable kexec phase for bootstrapping non-NixOS nodes
                           (equivalent to --phases kexec,disko,install,reboot)
-        --phases <phases> Explicitly specify nixos-anywhere phases
-                          (default: disko,install,reboot)
-        --dry-run         Verify and stage keys without executing nixos-anywhere
-        --debug           Enable debug tracing in reimage-host and nixos-anywhere
+        --phases <p>      Explicit nixos-anywhere phases (default: disko,install,reboot)
+        --no-restore      Do not attempt to restore Restic backups into /persist
+        --dry-run         Print commands and inspect staged keys without executing
+        --debug           Enable bash xtrace and pass --debug to nixos-anywhere
         -h, --help        Show this help message
-
-      Examples:
-        reimage-host arges root@192.168.1.50
-        reimage-host brontes root@brontes --kexec
-        reimage-host hades root@10.0.0.12 --dry-run
       EOF
       }
 
@@ -59,6 +56,7 @@ in
       HOST=""
       TARGET=""
       PHASES="disko,install,reboot"
+      NO_RESTORE=false
       DRY_RUN=false
       DEBUG=false
       EXTRA_ARGS=()
@@ -76,6 +74,10 @@ in
           --phases)
             PHASES="$2"
             shift 2
+            ;;
+          --no-restore)
+            NO_RESTORE=true
+            shift
             ;;
           --dry-run)
             DRY_RUN=true
@@ -139,44 +141,46 @@ in
       trap 'rm -rf "$STAGING_DIR"' EXIT INT TERM
       chmod 700 "$STAGING_DIR"
 
-      SSH_DIR="$STAGING_DIR/etc/ssh"
-      mkdir -p "$SSH_DIR"
-      chmod 755 "$STAGING_DIR/etc" "$SSH_DIR"
-
-      PRIV_KEY="$SSH_DIR/ssh_host_ed25519_key"
-      PUB_KEY="$SSH_DIR/ssh_host_ed25519_key.pub"
-
-      echo "============================================================"
-      echo "==> Re-imaging host: $HOST"
-      echo "==> Target:          $TARGET"
-      echo "==> Phases:          $PHASES"
-      echo "============================================================"
+      PRIV_KEY="$STAGING_DIR/id_ed25519"
+      PUB_KEY="$STAGING_DIR/id_ed25519.pub"
 
       # ------------------------------------------------------------
-      # Phase 1: Identity Resolution & Verification
+      # Phase 1: Identity Resolution & Key Decryption
       # ------------------------------------------------------------
       if [ -f "$KEY_AGE" ]; then
-        echo "==> Found existing encrypted private key: $KEY_AGE"
+        echo "==> Decrypting existing host private key from $KEY_AGE..."
 
-        ID_FLAGS=()
-        if [ -f "$HOME/.ssh/id_ed25519" ]; then
-          ID_FLAGS+=("-i" "$HOME/.ssh/id_ed25519")
-        fi
-        if [ -f "$HOME/.ssh/id_rsa" ]; then
-          ID_FLAGS+=("-i" "$HOME/.ssh/id_rsa")
+        DECRYPTED=false
+        # Try local user identities
+        for id_candidate in "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_rsa"; do
+          if [ -f "$id_candidate" ]; then
+            if rage -d -i "$id_candidate" -o "$PRIV_KEY" "$KEY_AGE" 2>/dev/null; then
+              DECRYPTED=true
+              break
+            fi
+          fi
+        done
+
+        # Try age-plugin-yubikey if identity files weren't sufficient
+        if [ "$DECRYPTED" = false ]; then
+          if command -v age-plugin-yubikey >/dev/null 2>&1; then
+            if rage -d -o "$PRIV_KEY" "$KEY_AGE" 2>/dev/null; then
+              DECRYPTED=true
+            fi
+          fi
         fi
 
-        # Strict decryption check: must not fail silently or overwrite
-        if ! rage -d "''${ID_FLAGS[@]}" "$KEY_AGE" > "$PRIV_KEY" 2>/dev/null; then
-          echo "FATAL ERROR: Failed to decrypt '$KEY_AGE'!" >&2
-          echo "Please ensure your master private key (~/.ssh/id_ed25519) or YubiKey is available." >&2
-          echo "Refusing to proceed or regenerate identity to avoid permanent secret lock-out." >&2
+        if [ "$DECRYPTED" = false ]; then
+          echo "FATAL ERROR: Failed to decrypt '$KEY_AGE' using available SSH/YubiKey identities!" >&2
+          echo "Refusing to overwrite existing host identity without the matching decryption key." >&2
           exit 1
         fi
+
         chmod 600 "$PRIV_KEY"
 
+        # Verify decrypted private key against key.pub if present
         if [ -f "$KEY_PUB" ]; then
-          DERIVED_PUB=$(ssh-keygen -y -f "$PRIV_KEY")
+          DERIVED_PUB=$(ssh-keygen -y -f "$PRIV_KEY" | tr -d '\r\n')
           EXPECTED_PUB=$(tr -d '\r\n' < "$KEY_PUB")
           if [ "$DERIVED_PUB" != "$EXPECTED_PUB" ]; then
             echo "FATAL ERROR: Decrypted key does not match public key in '$KEY_PUB'!" >&2
@@ -218,47 +222,114 @@ in
         fi
       fi
 
+      # Stage keys into standard and impermanence paths
+      mkdir -p "$STAGING_DIR/etc/ssh"
+      mkdir -p "$STAGING_DIR/persist/etc/ssh"
+      cp "$PRIV_KEY" "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key"
+      cp "$PUB_KEY" "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub"
+      cp "$PRIV_KEY" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key"
+      cp "$PUB_KEY" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key.pub"
+      chmod 600 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key"
+      chmod 644 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key.pub"
+
       echo "==> Staged SSH host keys in $STAGING_DIR"
 
       # ------------------------------------------------------------
-      # Phase 2: Wipe & Install via nixos-anywhere
+      # Phase 2: Check for Backup Restoration Support
       # ------------------------------------------------------------
-      ANYWHERE_CMD=(
-        nixos-anywhere
-        --extra-files "$STAGING_DIR"
-        --flake ".#$HOST"
-        --phases "$PHASES"
-      )
+      BACKUP_ENABLED=$(nix eval .#nixosConfigurations."$HOST".config.features.backup.enable 2>/dev/null || echo false)
+      BACKUP_REPO=$(nix eval --raw .#nixosConfigurations."$HOST".config.features.backup.repository 2>/dev/null || echo "")
 
-      if [ "$DEBUG" = true ]; then
-        ANYWHERE_CMD+=(--debug)
+      if [ "$BACKUP_ENABLED" = "true" ] && [ -n "$BACKUP_REPO" ] && [ "$NO_RESTORE" = false ]; then
+        echo "==> Host $HOST has features.backup enabled ($BACKUP_REPO)."
+        echo "==> Executing phased re-imaging with automated Restic restore..."
+
+        # Step 1: Disko phase (partition and mount /mnt/persist)
+        DISKO_PHASES="disko"
+        if [[ "$PHASES" == *"kexec"* ]]; then
+          DISKO_PHASES="kexec,disko"
+        fi
+
+        DISKO_CMD=(
+          nixos-anywhere
+          --flake ".#$HOST"
+          --phases "$DISKO_PHASES"
+        )
+        if [ "$DEBUG" = true ]; then DISKO_CMD+=(--debug); fi
+        if [ ''${#EXTRA_ARGS[@]} -gt 0 ]; then DISKO_CMD+=("''${EXTRA_ARGS[@]}"); fi
+        DISKO_CMD+=("$TARGET")
+
+        if [ "$DRY_RUN" = true ]; then
+          echo "==> [DRY RUN] Step 1 (Disko): ''${DISKO_CMD[*]}"
+        else
+          echo "==> Running Disko partitioning..."
+          "''${DISKO_CMD[@]}"
+        fi
+
+        # Step 2: Restic restore into /mnt/persist
+        RESTIC_PASSWORD_FILE="nix/core/secrets/secret_files/restic_password.age"
+        RESTIC_PW=""
+        if [ -f "$RESTIC_PASSWORD_FILE" ]; then
+          RESTIC_PW=$(rage -d -i "$HOME/.ssh/id_ed25519" "$RESTIC_PASSWORD_FILE" 2>/dev/null || true)
+        fi
+
+        if [ "$DRY_RUN" = true ]; then
+          echo "==> [DRY RUN] Step 2 (Restore): Would check $BACKUP_REPO for snapshots and restore to /mnt/persist"
+        elif [ -n "$RESTIC_PW" ]; then
+          echo "==> Checking for existing Restic snapshots in $BACKUP_REPO..."
+          if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --json >/dev/null 2>&1; then
+            echo "==> Found snapshots! Restoring latest snapshot into /mnt/persist..."
+            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --target /mnt/persist
+            echo "==> Restic restore complete."
+          else
+            echo "==> No snapshots found in $BACKUP_REPO. Continuing with fresh /persist."
+          fi
+        fi
+
+        # Step 3: Install & Reboot
+        INSTALL_CMD=(
+          nixos-anywhere
+          --extra-files "$STAGING_DIR"
+          --flake ".#$HOST"
+          --phases "install,reboot"
+        )
+        if [ "$DEBUG" = true ]; then INSTALL_CMD+=(--debug); fi
+        if [ ''${#EXTRA_ARGS[@]} -gt 0 ]; then INSTALL_CMD+=("''${EXTRA_ARGS[@]}"); fi
+        INSTALL_CMD+=("$TARGET")
+
+        if [ "$DRY_RUN" = true ]; then
+          echo "==> [DRY RUN] Step 3 (Install & Reboot): ''${INSTALL_CMD[*]}"
+          echo "==> [DRY RUN] Staged files:"
+          ls -laR "$STAGING_DIR"
+          exit 0
+        fi
+
+        echo "==> Installing NixOS..."
+        "''${INSTALL_CMD[@]}"
+
+      else
+        # Single-shot deployment when restic restore is not configured or disabled
+        ANYWHERE_CMD=(
+          nixos-anywhere
+          --extra-files "$STAGING_DIR"
+          --flake ".#$HOST"
+          --phases "$PHASES"
+        )
+        if [ "$DEBUG" = true ]; then ANYWHERE_CMD+=(--debug); fi
+        if [ ''${#EXTRA_ARGS[@]} -gt 0 ]; then ANYWHERE_CMD+=("''${EXTRA_ARGS[@]}"); fi
+        ANYWHERE_CMD+=("$TARGET")
+
+        if [ "$DRY_RUN" = true ]; then
+          echo "==> [DRY RUN] Command that would be executed:"
+          echo "    ''${ANYWHERE_CMD[*]}"
+          echo "==> [DRY RUN] Extra-files staged:"
+          ls -laR "$STAGING_DIR"
+          exit 0
+        fi
+
+        echo "==> Executing nixos-anywhere..."
+        "''${ANYWHERE_CMD[@]}"
       fi
-
-      if [ ''${#EXTRA_ARGS[@]} -gt 0 ]; then
-        ANYWHERE_CMD+=("''${EXTRA_ARGS[@]}")
-      fi
-
-      ANYWHERE_CMD+=("$TARGET")
-
-      if [ "$DRY_RUN" = true ]; then
-        echo "==> [DRY RUN] Command that would be executed:"
-        echo "    ''${ANYWHERE_CMD[*]}"
-        echo "==> [DRY RUN] Extra-files staged:"
-        ls -laR "$STAGING_DIR"
-        exit 0
-      fi
-
-      echo "==> Executing nixos-anywhere..."
-      "''${ANYWHERE_CMD[@]}"
-
-      # ------------------------------------------------------------
-      # Phase 3: Post-Install Data Hook (Extensible for Restic)
-      # ------------------------------------------------------------
-      # RESERVED: In future revisions, plug in restic backup restoration here:
-      # if [ -n "''${RESTIC_RESTORE:-}" ]; then
-      #   echo "==> Restoring restic snapshot for $HOST..."
-      #   ...
-      # fi
 
       echo "============================================================"
       echo "==> Host $HOST re-imaging complete!"
