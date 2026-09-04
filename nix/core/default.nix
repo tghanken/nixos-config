@@ -1,14 +1,8 @@
 {...}: {
   imports = [
-    ./base.nix
-    ./bootloader.nix
-    ./determinate.nix
-    ./kernel.nix
-    ./networking.nix
-    ./tailscale.nix
-    ./auto-upgrade.nix
-    ./earlyoom.nix
+    ./system.nix
     ./headless.nix
+    ./tailscale.nix
     ../features/secrets
   ];
 }

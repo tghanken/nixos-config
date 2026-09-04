@@ -1,12 +1,5 @@
 {inputs, ...}: {
   imports = [
-    {
-      config.facter.reportPath =
-        if builtins.pathExists ./facter.json
-        then ./facter.json
-        else throw "Have you forgotten to run nixos-anywhere with `--generate-hardware-config nixos-facter ./facter.json`?";
-    }
-
     # Hardware additions
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
 
@@ -17,16 +10,12 @@
     ../../features/ai.nix
     ../../features/development.nix
     ../../features/gaming.nix
-    ../../features/github-runner.nix
 
-    # User
-    ../../users/tghanken.nix
+    # Services
+    ../../services/github-runner.nix
   ];
 
-  disko.devices = import ./disk-config.nix;
-  networking.hostName = "hercules";
   networking.hostId = "c1c4e9e4";
-
   system.stateVersion = "25.11";
 
   services.github-runner-containers = {

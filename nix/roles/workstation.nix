@@ -1,11 +1,6 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
     ../core
-    ../features/netbird.nix
   ];
 
   # Bluetooth
@@ -33,27 +28,6 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
-  };
-
-  # Netbird client
-  age.secrets.netbird_taylor_client.file = ../features/secrets/secret_files/encrypted/netbird_taylor_client.age;
-  age.secrets.netbird_actionable_tghanken_client.file = ../features/secrets/secret_files/encrypted/netbird_actionable_tghanken_client.age;
-  services.netbird_user = {
-    enable = true;
-    clients = {
-      default = {
-        auth_key_path = config.age.secrets.netbird_taylor_client.path;
-        port = 51821;
-        openFirewall = true;
-        hardened = false;
-      };
-      actionable = {
-        auth_key_path = config.age.secrets.netbird_actionable_tghanken_client.path;
-        port = 51822;
-        openFirewall = true;
-        hardened = false;
-      };
-    };
   };
 
   # Desktop environment for tghanken

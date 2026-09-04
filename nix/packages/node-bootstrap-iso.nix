@@ -32,14 +32,14 @@
           isoImage.makeUsbBootable = true;
         }
       )
-      ../core/base.nix
-      ../core/kernel.nix
-      ../core/networking.nix
+      ../core/system.nix
       ../users/tghanken.nix
       {
         networking.hostId = "12345678";
         boot.supportedFilesystems = ["zfs"];
         boot.zfs.forceImportRoot = false;
+        boot.loader.grub.enable = false;
+        system.autoUpgrade.enable = false;
         system.stateVersion = "25.11";
       }
     ];
