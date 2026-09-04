@@ -1,4 +1,4 @@
-{...}: let
+{lib, ...}: let
   email = "tghanken@gmail.com";
   name = "Taylor Hanken";
 in {
@@ -12,6 +12,8 @@ in {
       "docker"
     ];
     hashedPassword = "$6$aVX13r8lw5yvxWJZ$TrXrqKub2dJArKGyZ75l5AQC.yIh8ysgigZniYT.ZkvQRvjgb45oFNUnFIUd5xTfE0JXzFzPHwMWdJcdth9Tj1";
+    openssh.authorizedKeys.keys =
+      (import ../lib/keys.nix {inherit lib;}).readUserKeys "tghanken";
   };
 
   nix.settings.trusted-users = ["tghanken"];

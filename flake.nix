@@ -6,7 +6,6 @@
     # Nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-lib.url = "github:nix-community/nixpkgs.lib";
     systems.url = "github:nix-systems/default";
 
     # Determinate Nix
@@ -22,7 +21,7 @@
     };
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs-lib";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -38,7 +37,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
     };
-    agenix-template.url = "github:jhillyerd/agenix-template/1.0.0";
+    agenix-rekey = {
+      url = "github:oddlama/agenix-rekey";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -51,8 +54,7 @@
       url = "github:nix-community/nixos-anywhere";
       inputs.disko.follows = "disko";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
-      inputs.nixos-stable.follows = "nixpkgs";
-      inputs.treefmt-nix.follows = "treefmt-nix";
+      inputs.nixos-stable.follows = "";
     };
     nixos-facter-modules = {
       url = "github:numtide/nixos-facter-modules";
@@ -67,7 +69,6 @@
       url = "github:Mic92/nix-fast-build";
       inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.treefmt-nix.follows = "treefmt-nix";
     };
 
     niks3 = {
@@ -79,7 +80,6 @@
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.systems.follows = "systems";
-      inputs.treefmt-nix.follows = "treefmt-nix";
       inputs.flake-parts.follows = "flake-parts";
     };
   };
@@ -88,6 +88,7 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       systems = ["x86_64-linux"];
       imports = [
+        inputs.agenix-rekey.flakeModule
         ./nix
       ];
     };

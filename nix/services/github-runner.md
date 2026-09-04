@@ -210,9 +210,10 @@ trailing newline — same format as the GitHub runner PATs):
 
 ```bash
 just es niks3_upload_token
+just rs
 ```
 
-Secret file: `encrypted/niks3_upload_token.age`
+Secret file: `nix/core/secrets/secret_files/niks3_upload_token.age` (automatically rekeyed for hercules via `agenix rekey`).
 
 After deploy, verify the daemon:
 

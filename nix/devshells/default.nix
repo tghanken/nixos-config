@@ -6,6 +6,7 @@
   perSystem = {
     pkgs,
     inputs',
+    config,
     ...
   }: {
     devshells.base = {
@@ -19,9 +20,11 @@
         {package = pkgs.just;}
       ];
       packages = [
-        inputs'.agenix.packages.default
+        config.agenix-rekey.package
         inputs'.nixos-anywhere.packages.default
         inputs'.nix-fast-build.packages.default
+        pkgs.age-plugin-yubikey
+        pkgs.yubikey-manager
       ];
     };
   };

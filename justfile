@@ -8,16 +8,14 @@ clean:
 	@rm -rf result
 	@rm -rf result-*
 
-[working-directory: 'nix/core/secrets/secret_files']
 [group("Secrets")]
 rekey-secrets:
 	@echo "Rekeying secrets..."
-	@agenix -r
+	@agenix rekey
 
-[working-directory: 'nix/core/secrets/secret_files']
 [group("Secrets")]
 edit-secret SECRET:
-	@agenix -e encrypted/{{SECRET}}.age
+	@agenix edit nix/core/secrets/secret_files/{{SECRET}}.age
 
 alias rs := rekey-secrets
 alias es := edit-secret

@@ -19,7 +19,7 @@ top @ {
   cfg = config.services.github-runner-containers;
 
   runnerUser = "github-runner";
-  encryptedPath = ../core/secrets/secret_files/encrypted;
+  encryptedPath = ../core/secrets/secret_files;
 
   sanitizeSecret = s: lib.replaceStrings ["-" "."] ["_" "_"] s;
   # nixos-containers disallow underscores in names
@@ -436,14 +436,14 @@ in {
         listToAttrs (
           map (owner:
             nameValuePair (secretNameForOwner owner) {
-              file = "${encryptedPath}/${secretNameForOwner owner}.age";
+              rekeyFile = "${encryptedPath}/${secretNameForOwner owner}.age";
               mode = "0440";
             })
           owners
         )
         // optionalAttrs cfg.niks3.uploader.enable {
           ${niks3UploadSecret} = {
-            file = "${encryptedPath}/${niks3UploadSecret}.age";
+            rekeyFile = "${encryptedPath}/${niks3UploadSecret}.age";
             mode = "0440";
           };
         };

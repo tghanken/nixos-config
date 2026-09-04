@@ -61,20 +61,9 @@
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
-  environment.systemPackages = with pkgs; [
-    teams-for-linux
-    zoom-us
-    slack
-    spotify
-  ];
-
-  # Enable the Cinnamon Desktop Environment.
   services.xserver.displayManager.lightdm.enable = true;
   services.xserver.desktopManager.cinnamon.enable = true;
-
   programs.gnome-terminal.enable = false;
-
-  # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
     variant = "";
@@ -82,4 +71,16 @@
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
+
+  # YubiKey & Smartcard support
+  services.pcscd.enable = true;
+  services.udev.packages = [pkgs.yubikey-personalization];
+  environment.systemPackages = with pkgs; [
+    teams-for-linux
+    zoom-us
+    slack
+    spotify
+    yubikey-manager
+    age-plugin-yubikey
+  ];
 }

@@ -9,6 +9,7 @@
   mkHost = {
     hostName,
     hostModule,
+    hostPubkey ? null,
     users ? ["tghanken"],
     disks ? null,
     diskRole ? null,
@@ -16,6 +17,19 @@
   }: let
     facterPath = hostModule + "/facter.json";
     legacyDiskConfig = hostModule + "/disk-config.nix";
+    hostPubkeyPath = hostModule + "/key.pub";
+
+    # Host public key for agenix-rekey
+    resolvedHostPubkey =
+      if hostPubkey != null
+      then hostPubkey
+      else if builtins.pathExists hostPubkeyPath
+      then lib.strings.trim (builtins.readFile hostPubkeyPath)
+      else null;
+
+    rekeyModule = lib.optionalAttrs (resolvedHostPubkey != null) {
+      age.rekey.hostPubkey = resolvedHostPubkey;
+    };
 
     # Disk configuration module
     diskoModule =
@@ -73,6 +87,7 @@
           baseHostModule
           facterModule
           diskoModule
+          rekeyModule
         ]
         ++ userModules
         ++ [hostModule];

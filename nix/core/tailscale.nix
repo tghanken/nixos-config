@@ -83,5 +83,6 @@ in {
     };
   };
 
-  config.services.tailscale_user.auth_key_path = config.age.secrets."tailscale_key".path;
+  config.age.secrets.tailscale_key.rekeyFile = ./secrets/secret_files/tailscale_key.age;
+  config.services.tailscale_user.auth_key_path = config.age.secrets.tailscale_key.path;
 }
