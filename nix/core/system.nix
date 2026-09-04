@@ -14,10 +14,9 @@
   # Boot loader & ZFS services
   boot = {
     supportedFilesystems = ["zfs"];
-    # Fixes broken zfs package. See https://github.com/NixOS/nixos-hardware/issues/1675
-    kernelPackages = pkgs.linuxPackages_6_18;
+    kernelPackages = pkgs.linuxPackages_6_18; # Fixes broken zfs package. See https://github.com/NixOS/nixos-hardware/issues/1675
     zfs = {
-      package = pkgs.zfs_2_4;
+      package = pkgs.zfs_2_4; # Also needed for kernel fixes
       devNodes = "/dev/disk/by-partlabel";
       forceImportRoot = false;
     };
