@@ -8,13 +8,13 @@ clean:
 	@rm -rf result
 	@rm -rf result-*
 
-[working-directory: 'nix/features/secrets/secret_files']
+[working-directory: 'nix/core/secrets/secret_files']
 [group("Secrets")]
 rekey-secrets:
 	@echo "Rekeying secrets..."
 	@agenix -r
 
-[working-directory: 'nix/features/secrets/secret_files']
+[working-directory: 'nix/core/secrets/secret_files']
 [group("Secrets")]
 edit-secret SECRET:
 	@agenix -e encrypted/{{SECRET}}.age

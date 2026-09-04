@@ -3,6 +3,6 @@
     ./system.nix
     ./headless.nix
     ./tailscale.nix
-    ../features/secrets
+    ./secrets
   ];
 }

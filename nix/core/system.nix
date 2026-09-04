@@ -89,7 +89,7 @@
 
   # SSH server used for bootstrapping
   services.openssh.enable = true;
-  users.users.root.openssh.authorizedKeys.keys = (import ../features/secrets/keys.nix).tghanken;
+  users.users.root.openssh.authorizedKeys.keys = (import ./secrets/keys.nix).tghanken;
   services.openssh.hostKeys = [
     {
       path = "/etc/ssh/ssh_host_ed25519_key";

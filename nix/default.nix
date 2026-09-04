@@ -20,7 +20,6 @@
       ai = ./features/ai.nix;
       development = ./features/development.nix;
       gaming = ./features/gaming.nix;
-      secrets = ./features/secrets;
     };
     users = {
       tghanken = ./users/tghanken.nix;

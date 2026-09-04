@@ -19,7 +19,7 @@ top @ {
   cfg = config.services.github-runner-containers;
 
   runnerUser = "github-runner";
-  encryptedPath = ../features/secrets/secret_files/encrypted;
+  encryptedPath = ../core/secrets/secret_files/encrypted;
 
   sanitizeSecret = s: lib.replaceStrings ["-" "."] ["_" "_"] s;
   # nixos-containers disallow underscores in names
