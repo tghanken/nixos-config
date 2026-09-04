@@ -9,7 +9,7 @@
     ...
   }: {
     packages = {
-      flake-check = import ../../lib/flake-check-tier.nix {
+      flake-check = import ../lib/flake-check-tier.nix {
         inherit pkgs;
         flakeSrc = pkgs.lib.cleanSource self;
         name = "flake-check";
