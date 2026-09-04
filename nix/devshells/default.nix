@@ -23,6 +23,8 @@
         config.agenix-rekey.package
         inputs'.nixos-anywhere.packages.default
         inputs'.nix-fast-build.packages.default
+        pkgs.colmena
+        pkgs.rage
         pkgs.age-plugin-yubikey
         pkgs.yubikey-manager
       ];

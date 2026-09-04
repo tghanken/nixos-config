@@ -112,9 +112,9 @@
     freeSwapThreshold = 5;
   };
 
-  # Auto upgrade
+  # Auto upgrade (disabled by default; opt-in on mobile workstations)
   system.autoUpgrade = {
-    enable = lib.mkDefault true;
+    enable = lib.mkOptionDefault false;
     flake = "github:tghanken/nixos-config";
     flags = ["-L"];
     dates = "02:00";

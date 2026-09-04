@@ -6,7 +6,7 @@
   lib = inputs.nixpkgs.lib;
   diskoLib = import ../lib/disko.nix {inherit lib;};
 
-  mkHost = {
+  mkHostModules = {
     hostName,
     hostModule,
     hostPubkey ? null,
@@ -14,6 +14,7 @@
     disks ? null,
     diskRole ? null,
     swap ? {},
+    ...
   }: let
     facterPath = hostModule + "/facter.json";
     legacyDiskConfig = hostModule + "/disk-config.nix";
@@ -62,39 +63,41 @@
       networking.hostName = hostName;
     };
   in
+    [
+      inputs.disko.nixosModules.disko
+      inputs.nixos-facter-modules.nixosModules.facter
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.useGlobalPkgs = true;
+        home-manager.useUserPackages = true;
+        home-manager.extraSpecialArgs = {
+          inherit inputs;
+          flake = self;
+          self = self;
+        };
+      }
+      baseHostModule
+      facterModule
+      diskoModule
+      rekeyModule
+    ]
+    ++ userModules
+    ++ [hostModule];
+
+  mkHost = args:
     lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = {
         inherit inputs;
-        inherit hostName;
+        inherit (args) hostName;
         flake = self;
         self = self;
       };
-      modules =
-        [
-          inputs.disko.nixosModules.disko
-          inputs.nixos-facter-modules.nixosModules.facter
-          inputs.home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = {
-              inherit inputs;
-              flake = self;
-              self = self;
-            };
-          }
-          baseHostModule
-          facterModule
-          diskoModule
-          rekeyModule
-        ]
-        ++ userModules
-        ++ [hostModule];
+      modules = mkHostModules args;
     };
-in {
-  flake.nixosConfigurations = {
-    hercules = mkHost {
+
+  hosts = {
+    hercules = {
       hostName = "hercules";
       hostModule = ./hercules;
       diskRole = "workstation";
@@ -107,7 +110,7 @@ in {
         encryptedSize = "10G";
       };
     };
-    pegasus = mkHost {
+    pegasus = {
       hostName = "pegasus";
       hostModule = ./pegasus;
       diskRole = "workstation";
@@ -119,7 +122,7 @@ in {
         encryptedSize = "8G";
       };
     };
-    arges = mkHost {
+    arges = {
       hostName = "arges";
       hostModule = ./arges;
       diskRole = "server-local";
@@ -127,7 +130,7 @@ in {
         "/dev/disk/by-id/mmc-TWSC_0x1f41b194"
       ];
     };
-    brontes = mkHost {
+    brontes = {
       hostName = "brontes";
       hostModule = ./brontes;
       diskRole = "server-local";
@@ -135,7 +138,7 @@ in {
         "/dev/disk/by-id/mmc-TWSC_0x2e43f056"
       ];
     };
-    steropes = mkHost {
+    steropes = {
       hostName = "steropes";
       hostModule = ./steropes;
       diskRole = "server-local";
@@ -143,23 +146,30 @@ in {
         "/dev/disk/by-id/mmc-TWSC_0x29214bef"
       ];
     };
-    hades = mkHost {
+    hades = {
       hostName = "hades";
       hostModule = ./hades;
       diskRole = "server-remote";
       disks = ["/dev/vda"];
     };
-    poseidon = mkHost {
+    poseidon = {
       hostName = "poseidon";
       hostModule = ./poseidon;
       diskRole = "server-remote";
       disks = ["/dev/vda"];
     };
-    zeus = mkHost {
+    zeus = {
       hostName = "zeus";
       hostModule = ./zeus;
       diskRole = "server-remote";
       disks = ["/dev/vda"];
+    };
+  };
+in {
+  flake = {
+    nixosConfigurations = lib.mapAttrs (_name: args: mkHost args) hosts;
+    colmena = import ./colmena.nix {
+      inherit self inputs hosts mkHostModules;
     };
   };
 }

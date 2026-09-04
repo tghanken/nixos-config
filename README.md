@@ -9,42 +9,53 @@
     - Run `station list` to get wireless interfaces
     - Run `station <interface> connect <SSID>` to connect to your wireless network
 
-## Bootstrapping a Host (with pre-generated keys & agenix-rekey)
+## Host Provisioning & Idempotent Re-imaging (`reimage-host`)
 
-To ensure secrets decrypt seamlessly on first boot without a two-stage redeploy:
+Host SSH identities are preserved across full disk wipes by storing their encrypted private key in `nix/hosts/<HOST>/key.age` (encrypted with master admin keys).
 
-1. **Pre-generate the host SSH key on your workstation**:
-   ```bash
-   mkdir -p /tmp/bootstrap-<HOST>/etc/ssh
-   ssh-keygen -t ed25519 -N "" -f /tmp/bootstrap-<HOST>/etc/ssh/ssh_host_ed25519_key -C "root@<HOST>"
-   chmod 600 /tmp/bootstrap-<HOST>/etc/ssh/ssh_host_ed25519_key
-   ```
+### Re-imaging an Existing Host
+To wipe disks, format with Disko, and reinstall while preserving the host's identity and `agenix-rekey` decryption capabilities:
+```bash
+just reimage <HOST> <TARGET-IP>
+# or:
+nix run .#reimage-host -- <HOST> root@<TARGET-IP>
+```
+If the host is not yet running NixOS (e.g. booted into a generic live rescue environment), pass `--kexec`:
+```bash
+nix run .#reimage-host -- <HOST> root@<TARGET-IP> --kexec
+```
 
-2. **Save the public key to the host directory**:
-   ```bash
-   cp /tmp/bootstrap-<HOST>/etc/ssh/ssh_host_ed25519_key.pub nix/hosts/<HOST>/key.pub
-   ```
+### Ingesting Active Host Keys
+To back up and encrypt the active SSH host private keys from running nodes into `nix/hosts/<HOST>/key.age`:
+```bash
+just ingest-keys
+# or for a specific host:
+nix run .#ingest-host-keys -- <HOST> --target root@<IP>
+```
 
-3. **Define the host in `nix/hosts/default.nix`** (with disk devices, role, etc.).
+### Provisioning a Brand New Host
+1. Define the host in `nix/hosts/default.nix` (with disks, role, etc.).
+2. Run `nix run .#reimage-host -- <HOST> root@<IP>` (or `--kexec`).
+   `reimage-host` will automatically generate a new keypair, commit `key.pub`, encrypt `key.age`, run `agenix rekey`, and deploy via `nixos-anywhere`.
 
-4. **Rekey secrets for the new host**:
-   ```bash
-   just rs   # or: agenix rekey
-   ```
+## Fleet Deployment (`colmena`)
 
-5. **Deploy with `nixos-anywhere` passing `--extra-files`**:
-   ```bash
-   nixos-anywhere --extra-files /tmp/bootstrap-<HOST> -f .#<HOST> root@<IP> --phases disko,install,reboot
-   ```
-   If necessary, generate facter report during install:
-   ```bash
-   --generate-hardware-config nixos-facter ./nix/hosts/<HOST>/facter.json
-   ```
+Server updates are managed via push-based Colmena. All evaluations and builds run locally on your controller hardware (`buildOnTarget = false`), pushing final closures to nodes over SSH/Tailscale.
 
-6. **Clean up temporary keys**:
-   ```bash
-   rm -rf /tmp/bootstrap-<HOST>
-   ```
+* **Deploy all online servers (default)**:
+  ```bash
+  just deploy
+  # or: colmena apply --impure --on @server --keep-going
+  ```
+* **Deploy a specific node or tag**:
+  ```bash
+  just deploy arges
+  just deploy @workstation
+  ```
+* **Dry run / build closures without deploying**:
+  ```bash
+  just deploy-dry
+  ```
 
 ## Secrets Management (`agenix-rekey`)
 

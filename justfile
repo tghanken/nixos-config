@@ -19,3 +19,23 @@ edit-secret SECRET:
 
 alias rs := rekey-secrets
 alias es := edit-secret
+
+[group("Deployment")]
+reimage HOST TARGET="" *FLAGS="":
+	@nix run .#reimage-host -- {{HOST}} {{TARGET}} {{FLAGS}}
+
+[group("Deployment")]
+ingest-keys *HOSTS="":
+	@nix run .#ingest-host-keys -- {{HOSTS}}
+
+[group("Deployment")]
+deploy TARGET="@server":
+	@colmena apply --impure --on "{{TARGET}}" --keep-going
+
+[group("Deployment")]
+deploy-all:
+	@colmena apply --impure --keep-going
+
+[group("Deployment")]
+deploy-dry TARGET="@server":
+	@colmena build --impure --on "{{TARGET}}"

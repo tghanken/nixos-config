@@ -1,5 +1,6 @@
 {...}: {
   imports = [
+    ./apps
     ./hosts
     ./devshells
     ./formatter

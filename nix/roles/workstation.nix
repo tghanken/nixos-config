@@ -1,7 +1,14 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     ../core
   ];
+
+  # Workstations (especially laptops) retain auto-upgrade when online
+  system.autoUpgrade.enable = lib.mkDefault true;
 
   # Bluetooth
   hardware.bluetooth = {
