@@ -11,16 +11,16 @@
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  # Kernel & ZFS packages
-  # Fixes broken zfs package. See https://github.com/NixOS/nixos-hardware/issues/1675
-  boot.kernelPackages = pkgs.linuxPackages_6_18;
-  boot.zfs.package = pkgs.zfs_2_4;
-
   # Boot loader & ZFS services
   boot = {
     supportedFilesystems = ["zfs"];
-    zfs.devNodes = "/dev/disk/by-partlabel";
-    zfs.forceImportRoot = false;
+    # Fixes broken zfs package. See https://github.com/NixOS/nixos-hardware/issues/1675
+    kernelPackages = pkgs.linuxPackages_6_18;
+    zfs = {
+      package = pkgs.zfs_2_4;
+      devNodes = "/dev/disk/by-partlabel";
+      forceImportRoot = false;
+    };
     loader.grub = {
       enable = lib.mkDefault true;
       configurationLimit = 10;

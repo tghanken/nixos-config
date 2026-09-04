@@ -19,13 +19,6 @@
 
       # Packages that should be installed to the user profile.
       home.packages = with pkgs; [
-        # LSP servers
-        rust-analyzer
-        typescript-language-server
-        nodejs_22 # required by typescript-language-server
-        python3Packages.python-lsp-server
-        gopls
-
         # misc
         which
         tree

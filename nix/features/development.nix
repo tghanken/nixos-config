@@ -87,6 +87,12 @@ in {
         gh
         nil
         nixd
+        # Language servers
+        rust-analyzer
+        typescript-language-server
+        nodejs_22 # required by typescript-language-server
+        python3Packages.python-lsp-server
+        gopls
       ]
       ++ (with llm-agents; [
         pi
