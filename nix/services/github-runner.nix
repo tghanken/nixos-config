@@ -27,8 +27,8 @@ top @ {
   # Poor man's zero-padding for indices up to 99 (matches github-nix-ci).
   paddedNum = n:
     if n < 10
-    then "0${builtins.toString n}"
-    else builtins.toString n;
+    then "0${toString n}"
+    else toString n;
   secretNameForOwner = owner: "github_runner_${sanitizeSecret owner}";
   containerNameForOwner = owner: "github-runners-${sanitizeContainer owner}";
   runnerServiceName = runner: index: "${sanitizeSecret runner.owner}-${sanitizeSecret runner.repo}-${paddedNum index}";

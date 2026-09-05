@@ -32,11 +32,10 @@
         enable = true;
         priority = 2;
       };
-      programs.toml-sort = {
-        enable = true;
-        priority = 1;
-      };
       programs.yamlfmt.enable = true;
+      programs.actionlint.enable = true;
+      programs.just.enable = true;
+      programs.nixf-diagnose.enable = true;
     };
 
     checks.treefmt-check = config.treefmt.build.check self;

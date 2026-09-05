@@ -1,4 +1,4 @@
-{lib, ...}: rec {
+{lib, ...}: {
   /*
   Generates a standardized disko ZFS configuration.
 

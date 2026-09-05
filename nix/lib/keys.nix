@@ -1,4 +1,4 @@
-{lib, ...}: rec {
+{lib, ...}: let
   /*
   Reads an OpenSSH authorized_keys file and returns a list of trimmed key strings,
   ignoring empty lines and comment lines starting with #.
@@ -18,4 +18,6 @@
   Reads the keys file for a given user from nix/users/<user>.keys.
   */
   readUserKeys = user: readKeyFile (../users + "/${user}.keys");
+in {
+  inherit readKeyFile readUserKeys;
 }
