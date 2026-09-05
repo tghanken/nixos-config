@@ -125,7 +125,7 @@
           inherit name;
           value = {
             type = "disk";
-            device = device;
+            inherit device;
             content = {
               type = "gpt";
               partitions = {

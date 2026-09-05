@@ -9,7 +9,7 @@
     specialArgs = {
       inherit inputs;
       flake = self;
-      self = self;
+      inherit self;
     };
     modules = [
       inputs.home-manager.nixosModules.home-manager
@@ -19,7 +19,7 @@
         home-manager.extraSpecialArgs = {
           inherit inputs;
           flake = self;
-          self = self;
+          inherit self;
         };
       }
       (

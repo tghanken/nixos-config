@@ -44,7 +44,7 @@
     imports = mkHostModules args;
   };
 
-  nodes = lib.mapAttrs (_name: args: mkColmenaNode args) hosts;
+  nodes = lib.mapAttrs (_name: mkColmenaNode) hosts;
 in
   {
     meta = {
@@ -54,7 +54,7 @@ in
       specialArgs = {
         inherit inputs;
         flake = self;
-        self = self;
+        inherit self;
       };
     };
   }

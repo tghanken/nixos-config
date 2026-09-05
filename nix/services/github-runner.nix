@@ -251,7 +251,7 @@ top @ {
             extraPackages = [nixEvalJobsCapped pkgs.nix-eval-jobs] ++ cfg.extraPackages;
             user = runnerUser;
             group = runnerUser;
-            tokenFile = tokenFile;
+            inherit tokenFile;
             replace = true;
             ephemeral = true;
             extraLabels = labels;

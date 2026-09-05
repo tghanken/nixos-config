@@ -73,7 +73,7 @@
         home-manager.extraSpecialArgs = {
           inherit inputs;
           flake = self;
-          self = self;
+          inherit self;
         };
       }
       baseHostModule
@@ -91,7 +91,7 @@
         inherit inputs;
         inherit (args) hostName;
         flake = self;
-        self = self;
+        inherit self;
       };
       modules = mkHostModules args;
     };
@@ -167,7 +167,7 @@
   };
 in {
   flake = {
-    nixosConfigurations = lib.mapAttrs (_name: args: mkHost args) hosts;
+    nixosConfigurations = lib.mapAttrs (_name: mkHost) hosts;
     colmena = import ./colmena.nix {
       inherit self inputs hosts mkHostModules;
     };
