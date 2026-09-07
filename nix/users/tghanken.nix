@@ -64,6 +64,10 @@ in {
 
     home.stateVersion = "25.11";
     programs.home-manager.enable = true;
+
+    # Disable manual manpages to prevent Determinate Nix "options.json without a proper context" warnings:
+    # https://github.com/nix-community/home-manager/issues/7935
+    manual.manpages.enable = false;
   };
 
   environment.persistence."/persist/user".users.tghanken = lib.mkIf (config.storage.role == "workstation") {
