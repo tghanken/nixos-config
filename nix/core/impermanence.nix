@@ -71,11 +71,20 @@ in {
       after = ["zfs-import-zroot.service"];
       before = ["sysroot.mount"];
       requiredBy = ["sysroot.mount"];
-      path = [pkgs.zfs];
+      path = [pkgs.zfs pkgs.coreutils];
       unitConfig.DefaultDependencies = "no";
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${pkgs.zfs}/bin/zfs rollback -r ${cfg.rollback.rootDataset}@blank";
+        ExecStart = pkgs.writeShellScript "initrd-zfs-rollback" ''
+          set -euo pipefail
+          TARGET="${cfg.rollback.rootDataset}@blank"
+          if ${pkgs.zfs}/bin/zfs list -t snapshot -H -o name "$TARGET" >/dev/null 2>&1; then
+            echo "==> Rolling back root dataset to $TARGET..."
+            ${pkgs.zfs}/bin/zfs rollback -r "$TARGET"
+          else
+            echo "WARNING: Rollback target snapshot '$TARGET' does not exist! Skipping rollback to permit boot." >&2
+          fi
+        '';
       };
     };
 

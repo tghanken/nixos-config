@@ -127,5 +127,10 @@
     ".config/chromium"
     ".config/ghostty"
     ".config/Slack"
+    ".config/dconf"
+    ".cinnamon"
+    ".local/share/cinnamon"
+    ".local/share/keyrings"
+    ".config/pulse"
   ];
 }

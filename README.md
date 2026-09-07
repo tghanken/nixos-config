@@ -129,17 +129,18 @@ just reimage <hostname> root@<IP>
 
 ### What Happens Automatically:
 
-1. **Host Identity Preservation**: Verifies the remote host key matches `nix/hosts/<hostname>/key.pub` and decrypts `key.age`.
+1. **Host Identity Preservation**: Verifies the remote host key matches `nix/hosts/<hostname>/key.pub` and decrypts `key.age` (or automatically ingests active keys from `$TARGET` over SSH if `key.age` is not yet saved).
 2. **Disko Partitioning**: Partitions the disk(s) and creates fresh ZFS datasets.
 3. **Automated Restic Restore**:
    - Queries the fleet's Cloudflare R2 repository for the latest snapshot matching `--host <hostname> --tag host`.
-   - Restores `/persist/host` state directly into `/mnt/persist/host`.
-   - Restores `/persist/user` state if user backup exists.
-4. **Key Staging**: Stages decrypted host keys into `/mnt/persist/host/etc/ssh`.
+   - Restores `/persist/host` state directly into the deployment staging tree.
+   - Restores `/persist/user` state matching `--host <hostname> --tag user` if a user backup exists.
+4. **Key Staging**: Stages verified host keys into `/persist/host/etc/ssh`.
 5. **Installation & Reboot**: Deploys the system closure and reboots into a clean, restored node.
 
 ### Flags:
 
+- `--new-key`: Force generation of a new host Ed25519 keypair even if `key.pub` exists.
 - `--kexec`: Use kexec tarball to bootstrap machines booted from a generic rescue ISO.
 - `--no-restore`: Skip restoring Restic backups to start with a fresh `/persist` state.
 - `--dry-run`: Validate staged keys and commands without executing disk operations.

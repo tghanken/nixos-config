@@ -46,8 +46,9 @@
   hasCert = builtins.pathExists certFile;
   hasKey = builtins.pathExists keyAgeFile;
 
-  hasTier4 =
-    (config.environment.persistence ? "/persist/user")
+  hasTier4Sync =
+    (config.storage.role == "workstation")
+    && (config.environment.persistence ? "/persist/user")
     && (
       (config.environment.persistence."/persist/user".directories or [])
       != []
@@ -119,9 +120,9 @@ in {
     {
       assertions = [
         {
-          assertion = !hasTier4 || cfg.enable;
+          assertion = !hasTier4Sync || cfg.enable;
           message = ''
-            Host '${currentHost}' includes modules declaring Tier 4 persistent user storage (/persist/user), so features.sync must be enabled!
+            Host '${currentHost}' is a workstation with Tier 4 persistent user storage (/persist/user), so features.sync must be enabled!
           '';
         }
       ];
@@ -195,10 +196,13 @@ in {
         };
       };
 
-      # Open syncthing transfer ports on Tailscale private interface
-      networking.firewall.interfaces."tailscale0" = {
-        allowedTCPPorts = [22000 8384]; # 22000: transfer, 8384: Web GUI
+      # Open syncthing transfer ports on all interfaces for fast LAN sync, GUI on Tailscale only
+      networking.firewall = {
+        allowedTCPPorts = [22000]; # 22000: transfer
         allowedUDPPorts = [22000 21027]; # 22000: transfer, 21027: discovery
+        interfaces."tailscale0" = {
+          allowedTCPPorts = [8384]; # 8384: Web GUI
+        };
       };
 
       # Persist Syncthing identity keys and index databases across reboots

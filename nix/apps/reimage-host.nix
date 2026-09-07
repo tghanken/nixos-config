@@ -40,6 +40,7 @@ in
         target            Target SSH connection string (default: root@<host>)
 
       Options:
+        --new-key         Generate a new host keypair even if key.pub exists in repo
         --kexec           Enable kexec phase for bootstrapping non-NixOS nodes
                           (equivalent to --phases kexec,disko,install,reboot)
         --phases <p>      Explicit nixos-anywhere phases (default: disko,install,reboot)
@@ -61,6 +62,7 @@ in
       NO_RESTORE=false
       DRY_RUN=false
       DEBUG=false
+      NEW_KEY=false
       EXTRA_ARGS=()
 
       while [ $# -gt 0 ]; do
@@ -68,6 +70,10 @@ in
           -h|--help)
             usage
             exit 0
+            ;;
+          --new-key)
+            NEW_KEY=true
+            shift
             ;;
           --kexec)
             PHASES="kexec,disko,install,reboot"
@@ -149,7 +155,7 @@ in
       # ------------------------------------------------------------
       # Phase 1: Identity Resolution & Key Decryption
       # ------------------------------------------------------------
-      if [ -f "$KEY_AGE" ]; then
+      if [ -f "$KEY_AGE" ] && [ "$NEW_KEY" = false ]; then
         echo "==> Decrypting existing host private key from $KEY_AGE..."
 
         DECRYPTED=false
@@ -170,6 +176,18 @@ in
               DECRYPTED=true
             fi
           fi
+        fi
+
+        if [ "$DECRYPTED" = false ]; then
+          echo "WARNING: Failed silent decryption. Retrying with interactive output..." >&2
+          for id_candidate in "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_rsa"; do
+            if [ -f "$id_candidate" ]; then
+              if rage -d -i "$id_candidate" -o "$PRIV_KEY" "$KEY_AGE"; then
+                DECRYPTED=true
+                break
+              fi
+            fi
+          done
         fi
 
         if [ "$DECRYPTED" = false ]; then
@@ -200,14 +218,34 @@ in
           echo "==> Generated missing $KEY_PUB from decrypted private key."
         fi
 
-      elif [ -f "$KEY_PUB" ]; then
-        echo "FATAL ERROR: Found public key '$KEY_PUB' but missing encrypted private key '$KEY_AGE'!" >&2
-        echo "Cannot re-image without the matching private key, as existing secrets cannot be decrypted." >&2
-        echo "Run 'nix run .#ingest-host-keys' if the host is currently running, or delete '$KEY_PUB' if you wish to generate a brand new identity." >&2
-        exit 1
+      elif [ -f "$KEY_PUB" ] && [ "$NEW_KEY" = false ]; then
+        echo "==> Found $KEY_PUB but missing $KEY_AGE. Attempting live ingestion from $TARGET..."
+        FETCHED_KEY="$STAGING_DIR/fetched_host_key"
+        if ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new "$TARGET" "cat /etc/ssh/ssh_host_ed25519_key" > "$FETCHED_KEY" 2>/dev/null; then
+          DERIVED_PUB=$(ssh-keygen -y -f "$FETCHED_KEY" 2>/dev/null || true)
+          EXPECTED_PUB=$(tr -d '\r\n' < "$KEY_PUB")
+          if [ "$DERIVED_PUB" = "$EXPECTED_PUB" ]; then
+            echo "==> Ingested matching host key from running node $TARGET."
+            cp "$FETCHED_KEY" "$PRIV_KEY"
+            chmod 600 "$PRIV_KEY"
+            cp "$KEY_PUB" "$PUB_KEY"
+            chmod 644 "$PUB_KEY"
+            rage -R "${masterRecipientsFile}" -o "$KEY_AGE" "$PRIV_KEY"
+            echo "==> Encrypted and saved active host key to $KEY_AGE."
+          else
+            echo "FATAL ERROR: Fetched remote key from $TARGET does not match $KEY_PUB!" >&2
+            echo "Pass --new-key to explicitly generate a new host identity." >&2
+            exit 1
+          fi
+        else
+          echo "FATAL ERROR: Found public key '$KEY_PUB' but missing encrypted private key '$KEY_AGE'," >&2
+          echo "and could not reach $TARGET over SSH to ingest the active key." >&2
+          echo "Pass --new-key if you want to generate a fresh identity for this host." >&2
+          exit 1
+        fi
 
       else
-        echo "==> No existing identity found for $HOST. Initializing new host identity..."
+        echo "==> Initializing new host identity for $HOST..."
         ssh-keygen -t ed25519 -N "" -f "$PRIV_KEY" -C "root@$HOST"
         chmod 600 "$PRIV_KEY"
         chmod 644 "$PUB_KEY"
@@ -291,7 +329,7 @@ in
           "''${DISKO_CMD[@]}"
         fi
 
-        # Step 2: Restic restore into /mnt
+        # Step 2: Restic restore into $STAGING_DIR
         RESTIC_PASSWORD_FILE="nix/core/secrets/secret_files/restic_password.age"
         RESTIC_ENV_FILE="nix/core/secrets/secret_files/restic_r2_env.age"
         RESTIC_PW=""
@@ -309,23 +347,32 @@ in
         fi
 
         if [ "$DRY_RUN" = true ]; then
-          echo "==> [DRY RUN] Step 2 (Restore): Would check $BACKUP_REPO for snapshots and restore to /mnt"
+          echo "==> [DRY RUN] Step 2 (Restore): Would check $BACKUP_REPO for snapshots and restore into $STAGING_DIR"
         elif [ -n "$RESTIC_PW" ]; then
           echo "==> Checking for existing host snapshots for $HOST in $BACKUP_REPO..."
           if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --host "$HOST" --tag host --json >/dev/null 2>&1; then
-            echo "==> Found host snapshots! Restoring latest host snapshot into /mnt..."
-            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --host "$HOST" --tag host --target /mnt
+            echo "==> Found host snapshots! Restoring latest host snapshot into $STAGING_DIR..."
+            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --host "$HOST" --tag host --target "$STAGING_DIR"
             echo "==> Host state restore complete."
           else
             echo "==> No host snapshots found for $HOST in $BACKUP_REPO. Continuing with fresh /persist/host."
           fi
 
-          echo "==> Checking for user snapshots in $BACKUP_REPO..."
-          if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --tag user --json >/dev/null 2>&1; then
-            echo "==> Found user snapshots! Restoring latest user snapshot into /mnt..."
-            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --tag user --target /mnt || true
+          echo "==> Checking for user snapshots for $HOST in $BACKUP_REPO..."
+          if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --host "$HOST" --tag user --json >/dev/null 2>&1; then
+            echo "==> Found user snapshots! Restoring latest user snapshot into $STAGING_DIR..."
+            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --host "$HOST" --tag user --target "$STAGING_DIR" || true
             echo "==> User state restore complete."
           fi
+
+          # Re-apply staged SSH host keys over any restored older keys
+          mkdir -p "$STAGING_DIR/etc/ssh" "$STAGING_DIR/persist/host/etc/ssh"
+          cp "$PRIV_KEY" "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key"
+          cp "$PUB_KEY" "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub"
+          cp "$PRIV_KEY" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key"
+          cp "$PUB_KEY" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key.pub"
+          chmod 600 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key"
+          chmod 644 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key.pub"
         fi
 
         # Step 3: Install & Reboot

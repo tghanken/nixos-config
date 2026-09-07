@@ -70,15 +70,18 @@ in {
     manual.manpages.enable = false;
   };
 
-  environment.persistence."/persist/user".users.tghanken = lib.mkIf (config.storage.role == "workstation") {
-    directories = [
-      "Documents"
-      "Downloads"
-      "Pictures"
-      "Repos"
-      ".ssh"
-      ".gnupg"
-    ];
+  environment.persistence."/persist/user".users.tghanken = {
+    directories =
+      [
+        ".ssh"
+        ".gnupg"
+      ]
+      ++ lib.optionals (config.storage.role == "workstation") [
+        "Documents"
+        "Downloads"
+        "Pictures"
+        "Repos"
+      ];
     files = [
       ".zsh_history"
       ".bash_history"

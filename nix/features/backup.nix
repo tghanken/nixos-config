@@ -32,6 +32,12 @@ in {
   options.features.backup = {
     enable = mkEnableOption "Declarative Restic backup client";
 
+    requireBackup = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enforce mandatory backup assertion when Tier 3/4 storage is used.";
+    };
+
     backend = mkOption {
       type = types.enum ["r2" "rest" "custom"];
       default = "r2";
@@ -130,6 +136,7 @@ in {
       default = {
         OnCalendar = "02:00";
         Persistent = true;
+        RandomizedDelaySec = "45min";
       };
       description = "Systemd OnCalendar timer specification for automatic host backups.";
     };
@@ -139,6 +146,7 @@ in {
       default = {
         OnCalendar = "02:30";
         Persistent = true;
+        RandomizedDelaySec = "45min";
       };
       description = "Systemd OnCalendar timer specification for automatic user backups.";
     };
@@ -166,9 +174,12 @@ in {
     {
       assertions = [
         {
-          assertion = !hasTier3Or4 || cfg.enable;
+          assertion = !(cfg.requireBackup && hasTier3Or4) || cfg.enable;
           message = ''
             Host '${config.networking.hostName}' includes modules declaring Tier 3 (/persist/host) or Tier 4 (/persist/user) persistent storage, so features.backup must be enabled!
+            To explicitly disable backups for this host, configure:
+              features.backup.requireBackup = false;
+              features.backup.enable = false;
           '';
         }
         {
@@ -277,7 +288,7 @@ in {
             if cfg.isPrimary
             then [
               "--group-by"
-              "paths"
+              "host,paths"
               "--keep-daily 7"
               "--keep-weekly 4"
               "--keep-monthly 12"

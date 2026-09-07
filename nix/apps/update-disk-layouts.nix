@@ -11,16 +11,12 @@ pkgs.writeShellApplication {
 
     echo "==> Updating checked-in disk layout contracts..."
 
-    HOSTS=(
-      "arges"
-      "brontes"
-      "hades"
-      "hercules"
-      "pegasus"
-      "poseidon"
-      "steropes"
-      "zeus"
-    )
+    HOSTS=()
+    for dir in nix/hosts/*/; do
+      if [ -f "$dir/default.nix" ]; then
+        HOSTS+=("$(basename "$dir")")
+      fi
+    done
 
     for host in "''${HOSTS[@]}"; do
       echo "--> Generating nix/hosts/$host/disk-layout.json..."
