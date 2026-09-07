@@ -7,29 +7,32 @@ Operational runbook and implementation walkthrough for the storage overhaul on *
 ## 1. What Has Been Implemented in Code
 
 ### Declarative Disko Dataset Hierarchy
-* **Files**:
-  * [nix/hosts/hercules/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix)
-  * [nix/hosts/pegasus/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/pegasus/disk-config.nix)
-* **Features**:
-  * Root pool defaults to `com.sun:auto-snapshot = false` and `mountpoint = null`.
-  * `local/` un-snapshotted datasets: `root` (`/`, snapshotted to `@blank` at creation), `nix` (`/nix`), `var` (`/var`), `docker` (`/var/lib/docker`), `cache` (`~/.cache`), `cargo` (`~/.cargo`), `pnpm` (`~/.local/share/pnpm`), `bun` (`~/.bun`), `steam` (`~/.local/share/Steam`), `models` (`/data/models`).
-  * `safe/` snapshotted datasets: `persist` (`/persist`).
-  * `reserved` dataset: 15 GB unmounted reservation to avoid out-of-space pool lockups.
+
+- **Files**:
+  - [nix/hosts/hercules/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix)
+  - [nix/hosts/pegasus/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/pegasus/disk-config.nix)
+- **Features**:
+  - Root pool defaults to `com.sun:auto-snapshot = false` and `mountpoint = null`.
+  - `local/` un-snapshotted datasets: `root` (`/`, snapshotted to `@blank` at creation), `nix` (`/nix`), `var` (`/var`), `docker` (`/var/lib/docker`), `cache` (`~/.cache`), `cargo` (`~/.cargo`), `pnpm` (`~/.local/share/pnpm`), `bun` (`~/.bun`), `steam` (`~/.local/share/Steam`), `models` (`/data/models`).
+  - `safe/` snapshotted datasets: `persist` (`/persist`).
+  - `reserved` dataset: 15 GB unmounted reservation to avoid out-of-space pool lockups.
 
 ### Declarative Impermanence Module
-* **File**: [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix)
-* **Features**:
-  * Systemd initrd stage-1 service `initrd-rollback` with `requiredBy = ["sysroot.mount"]` and `before = ["sysroot.mount"]` guaranteeing rollback finishes before sysroot is mounted.
-  * Ensures `/persist` and `/var` are marked `neededForBoot = true`.
-  * Automated `systemd.tmpfiles.rules` configuring ownership (`tghanken:users`) on user mountpoints under the ephemeral home.
-  * Comprehensive persistent paths covering system identities, network, VPNs, desktop configs, dev repositories, and shells (`.zsh_history`, `.bash_history`).
+
+- **File**: [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix)
+- **Features**:
+  - Systemd initrd stage-1 service `initrd-rollback` with `requiredBy = ["sysroot.mount"]` and `before = ["sysroot.mount"]` guaranteeing rollback finishes before sysroot is mounted.
+  - Ensures `/persist` and `/var` are marked `neededForBoot = true`.
+  - Automated `systemd.tmpfiles.rules` configuring ownership (`tghanken:users`) on user mountpoints under the ephemeral home.
+  - Comprehensive persistent paths covering system identities, network, VPNs, desktop configs, dev repositories, and shells (`.zsh_history`, `.bash_history`).
 
 ### Declarative Cloudflare R2 Restic Backup Module
-* **File**: [nix/modules/nixos/restic.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/restic.nix)
-* **Features**:
-  * Configures `services.restic.backups.system` targeted at `/persist`.
-  * Native S3/R2 integration using `environmentFile` for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
-  * Nightly timer (`02:00`), pruning rules (`7 daily`, `4 weekly`, `12 monthly`), and standard dev exclusions.
+
+- **File**: [nix/modules/nixos/restic.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/restic.nix)
+- **Features**:
+  - Configures `services.restic.backups.system` targeted at `/persist`.
+  - Native S3/R2 integration using `environmentFile` for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+  - Nightly timer (`02:00`), pruning rules (`7 daily`, `4 weekly`, `12 monthly`), and standard dev exclusions.
 
 ---
 
@@ -59,10 +62,13 @@ sudo cp -a /etc/ssh/ssh_host_* /path/to/usb-or-backup/
    just es restic_password
    ```
 2. Create the Cloudflare R2 credentials environment file:
+
    ```bash
    just es restic_r2_env
    ```
+
    Contents of `restic_r2_env`:
+
    ```bash
    AWS_ACCESS_KEY_ID="<your-cloudflare-r2-access-key-id>"
    AWS_SECRET_ACCESS_KEY="<your-cloudflare-r2-secret-access-key>"
@@ -88,6 +94,7 @@ nixos-anywhere --flake .#hercules root@<installer-ip>
 ```
 
 Disko will automatically:
+
 1. Partition the drives and create the striped `zroot` pool.
 2. Create all `local/` and `safe/` datasets.
 3. Execute `postCreateHook` to capture the pristine `zroot/local/root@blank` snapshot.
@@ -122,19 +129,19 @@ In [nix/hosts/hercules/configuration.nix](file:///home/tghanken/Repos/os/nixos-c
 
 ## 6. Verification Runbook
 
-* **Verify Clean Root Rollback**:
+- **Verify Clean Root Rollback**:
   ```bash
   sudo touch /test-ephemeral
   sudo reboot
   # After reboot, /test-ephemeral must NOT exist
   ```
-* **Verify Persistent State Survives**:
+- **Verify Persistent State Survives**:
   ```bash
   touch /persist/test-persist
   sudo reboot
   # After reboot, /persist/test-persist MUST exist
   ```
-* **Verify Restic Backup**:
+- **Verify Restic Backup**:
   ```bash
   sudo systemctl start restic-backups-system.service
   sudo systemctl status restic-backups-system.service

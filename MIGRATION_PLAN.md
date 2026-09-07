@@ -7,19 +7,20 @@ A comprehensive architectural plan to refactor ZFS storage and Impermanence from
 ## 1. Context & Motivation
 
 ### Current Pain Points
+
 1. **Verbatim Disko Duplication (~100 lines per host)**:
-   * [hercules/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix) and [pegasus/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/pegasus/disk-config.nix) share an identical ~90-line dataset block (`reserved`, `local/root`, `local/nix`, `local/var`, `local/docker`, `local/cache`, `local/cargo`, `local/pnpm`, `local/bun`, `local/steam`, `local/models`, `safe/persist`).
-   * Updating snapshot options, mountpoints, or compression requires manual edits across every host file.
+   - [hercules/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix) and [pegasus/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/pegasus/disk-config.nix) share an identical ~90-line dataset block (`reserved`, `local/root`, `local/nix`, `local/var`, `local/docker`, `local/cache`, `local/cargo`, `local/pnpm`, `local/bun`, `local/steam`, `local/models`, `safe/persist`).
+   - Updating snapshot options, mountpoints, or compression requires manual edits across every host file.
 2. **Hardcoded Username (`tghanken`)**:
-   * Username is embedded across Disko mountpoint paths (`/home/tghanken/.cache`, `/home/tghanken/.cargo`, etc.) and impermanence user blocks, making modules un-reusable for servers or other users.
+   - Username is embedded across Disko mountpoint paths (`/home/tghanken/.cache`, `/home/tghanken/.cargo`, etc.) and impermanence user blocks, making modules un-reusable for servers or other users.
 3. **The "God Module" Impermanence Anti-Pattern**:
-   * [impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix) centrally hardcodes paths for unrelated subsystems (Tailscale, Bluetooth, NetworkManager, Chrome, Spotify, Discord, Thunderbird).
-   * Violates NixOS module encapsulation: headless servers evaluate client paths (e.g. Chrome/Bluetooth), and adding or modifying a service requires editing a separate storage module.
+   - [impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix) centrally hardcodes paths for unrelated subsystems (Tailscale, Bluetooth, NetworkManager, Chrome, Spotify, Discord, Thunderbird).
+   - Violates NixOS module encapsulation: headless servers evaluate client paths (e.g. Chrome/Bluetooth), and adding or modifying a service requires editing a separate storage module.
 4. **Double Declaration of Paths & Permissions**:
-   * Every dataset mountpoint under `/home/tghanken` is manually duplicated in `systemd.tmpfiles.rules` to assign `tghanken:users` ownership.
+   - Every dataset mountpoint under `/home/tghanken` is manually duplicated in `systemd.tmpfiles.rules` to assign `tghanken:users` ownership.
 5. **No Distinction Between Workstations & Servers**:
-   * Workstations (`hercules`, `pegasus`) need gaming (`steam`), local AI (`models`), and language caches (`cargo`, `pnpm`, `bun`).
-   * Headless servers (`hades`, `zeus`, `poseidon`) only need core system, container, and persistence datasets.
+   - Workstations (`hercules`, `pegasus`) need gaming (`steam`), local AI (`models`), and language caches (`cargo`, `pnpm`, `bun`).
+   - Headless servers (`hades`, `zeus`, `poseidon`) only need core system, container, and persistence datasets.
 
 ---
 
@@ -44,10 +45,11 @@ graph TD
 ```
 
 ### Core Design Principles
-* **Separation of Concerns**: Physical drive geometry (devices, ESP, swap size) lives in the host file; logical dataset topology lives in a shared generator.
-* **Colocated Persistence**: Each service or profile declares its own persistent files and directories using NixOS's open module system (`environment.persistence."/persist"`).
-* **Dynamic Permission Synthesis**: Permissions for user mountpoints are derived automatically by introspecting `config.fileSystems`.
-* **Zero Duplication**: Shared dataset schemas and profile tiers allow adding a new host with ~25 lines of configuration instead of ~170 lines.
+
+- **Separation of Concerns**: Physical drive geometry (devices, ESP, swap size) lives in the host file; logical dataset topology lives in a shared generator.
+- **Colocated Persistence**: Each service or profile declares its own persistent files and directories using NixOS's open module system (`environment.persistence."/persist"`).
+- **Dynamic Permission Synthesis**: Permissions for user mountpoints are derived automatically by introspecting `config.fileSystems`.
+- **Zero Duplication**: Shared dataset schemas and profile tiers allow adding a new host with ~25 lines of configuration instead of ~170 lines.
 
 ---
 
@@ -198,13 +200,13 @@ Host `disk-config.nix` files focus strictly on physical disks and vdev topology:
 
 Move persistence rules out of `impermanence.nix` into their respective domain modules:
 
-| Subsystem / Service | Owning File | Declarative Persistence |
-| :--- | :--- | :--- |
-| **Tailscale** | [nix/modules/nixos/tailscale.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/tailscale.nix) | `environment.persistence."/persist".directories = [ "/var/lib/tailscale" ];` |
-| **Bluetooth** | [nix/modules/nixos/bluetooth.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/bluetooth.nix) | `environment.persistence."/persist".directories = [ "/var/lib/bluetooth" ];` |
-| **Networking** | [nix/modules/nixos/networking.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/networking.nix) | `environment.persistence."/persist".directories = [ "/etc/NetworkManager/system-connections" ];` |
-| **Desktop Client Apps** | [nix/modules/profiles/shared-client.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/profiles/shared-client.nix) | `environment.persistence."/persist".users.${user}.directories = [ ".config/spotify" ".config/discord" ".config/google-chrome" ".thunderbird" ];` |
-| **Core Base OS** | [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix) | `/etc/machine-id`, `/etc/ssh/ssh_host_*`, `/var/log`, `/var/lib/nixos`, `/var/lib/systemd`, user Repos, Documents, `.ssh`, `.gnupg`, shell history |
+| Subsystem / Service     | Owning File                                                                                                                  | Declarative Persistence                                                                                                                            |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tailscale**           | [nix/modules/nixos/tailscale.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/tailscale.nix)               | `environment.persistence."/persist".directories = [ "/var/lib/tailscale" ];`                                                                       |
+| **Bluetooth**           | [nix/modules/nixos/bluetooth.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/bluetooth.nix)               | `environment.persistence."/persist".directories = [ "/var/lib/bluetooth" ];`                                                                       |
+| **Networking**          | [nix/modules/nixos/networking.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/networking.nix)             | `environment.persistence."/persist".directories = [ "/etc/NetworkManager/system-connections" ];`                                                   |
+| **Desktop Client Apps** | [nix/modules/profiles/shared-client.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/profiles/shared-client.nix) | `environment.persistence."/persist".users.${user}.directories = [ ".config/spotify" ".config/discord" ".config/google-chrome" ".thunderbird" ];`   |
+| **Core Base OS**        | [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix)         | `/etc/machine-id`, `/etc/ssh/ssh_host_*`, `/var/log`, `/var/lib/nixos`, `/var/lib/systemd`, user Repos, Documents, `.ssh`, `.gnupg`, shell history |
 
 ### Component 4: Dynamic User & Mountpoint Tmpfiles Synthesis
 
@@ -238,32 +240,37 @@ In [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-con
 ## 4. Step-by-Step Migration Phases
 
 ### Phase 1: Disko Generator Library
-* [ ] Create `nix/lib/disko.nix` exporting `mkZfsDatasets`.
-* [ ] Integrate into `nix/lib/default.nix` so it is accessible across all host modules.
-* [ ] Refactor [hercules/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix) to use `mkZfsDatasets { profile = "desktop"; }`.
-* [ ] Refactor [pegasus/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/pegasus/disk-config.nix) to use `mkZfsDatasets { profile = "desktop"; }`.
-* [ ] Verify: `nix eval .#nixosConfigurations.hercules.config.system.build.diskoScript` and `nix flake check --no-build`.
+
+- [ ] Create `nix/lib/disko.nix` exporting `mkZfsDatasets`.
+- [ ] Integrate into `nix/lib/default.nix` so it is accessible across all host modules.
+- [ ] Refactor [hercules/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix) to use `mkZfsDatasets { profile = "desktop"; }`.
+- [ ] Refactor [pegasus/disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/pegasus/disk-config.nix) to use `mkZfsDatasets { profile = "desktop"; }`.
+- [ ] Verify: `nix eval .#nixosConfigurations.hercules.config.system.build.diskoScript` and `nix flake check --no-build`.
 
 ### Phase 2: Decentralize Impermanence
-* [ ] Add `mkIf config.services.impermanence.enable` blocks into domain modules:
-  * [tailscale.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/tailscale.nix)
-  * [bluetooth.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/bluetooth.nix)
-  * [networking.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/networking.nix)
-  * [shared-client.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/profiles/shared-client.nix)
-* [ ] Strip domain-specific paths from [impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix).
-* [ ] Verify: inspect `nixosConfigurations.hercules.config.environment.persistence."/persist"` to confirm identical merged path resolution.
+
+- [ ] Add `mkIf config.services.impermanence.enable` blocks into domain modules:
+  - [tailscale.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/tailscale.nix)
+  - [bluetooth.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/bluetooth.nix)
+  - [networking.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/networking.nix)
+  - [shared-client.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/profiles/shared-client.nix)
+- [ ] Strip domain-specific paths from [impermanence.nix](file:///home/tghanken/Repos/os/nixos-config/nix/modules/nixos/impermanence.nix).
+- [ ] Verify: inspect `nixosConfigurations.hercules.config.environment.persistence."/persist"` to confirm identical merged path resolution.
 
 ### Phase 3: Dynamic Tmpfiles Rules
-* [ ] Add `user` option to `services.impermanence`.
-* [ ] Replace hardcoded tmpfiles list with dynamic `config.fileSystems` introspection.
-* [ ] Verify: inspect `nixosConfigurations.hercules.config.systemd.tmpfiles.rules` to confirm all user dataset mount points receive proper permissions.
+
+- [ ] Add `user` option to `services.impermanence`.
+- [ ] Replace hardcoded tmpfiles list with dynamic `config.fileSystems` introspection.
+- [ ] Verify: inspect `nixosConfigurations.hercules.config.systemd.tmpfiles.rules` to confirm all user dataset mount points receive proper permissions.
 
 ### Phase 4: Server Fleet Rollout (`hades`, `zeus`, `poseidon`, `arges`, `brontes`, `steropes`)
-* [ ] Refactor server `disk-config.nix` files to use `mkZfsDatasets { profile = "server"; }`.
-* [ ] Ensure servers only mount `root`, `nix`, `var`, `docker`, and `persist`.
-* [ ] Verify: evaluate disko scripts for all server configurations.
+
+- [ ] Refactor server `disk-config.nix` files to use `mkZfsDatasets { profile = "server"; }`.
+- [ ] Ensure servers only mount `root`, `nix`, `var`, `docker`, and `persist`.
+- [ ] Verify: evaluate disko scripts for all server configurations.
 
 ### Phase 5: Live Host Re-image Runbook
+
 1. Execute pre-reimage backups (`rsync` of `Repos`, `.ssh`, `.gnupg`, host keys) on target host.
 2. Deploy via `nixos-anywhere --flake .#<host> root@<installer-ip>`.
 3. Verify `@blank` rollback and persistence integrity upon reboot.
@@ -272,7 +279,7 @@ In [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-con
 
 ## 5. Verification & Rollback Strategy
 
-* **Evaluation Invariants**:
+- **Evaluation Invariants**:
   Every phase must produce zero breaking changes on:
   ```bash
   nix flake check --no-build
@@ -280,7 +287,7 @@ In [nix/modules/nixos/impermanence.nix](file:///home/tghanken/Repos/os/nixos-con
   nix eval .#nixosConfigurations.pegasus.config.system.build.toplevel
   nix eval .#nixosConfigurations.hades.config.system.build.toplevel
   ```
-* **Disko Equivalence Test**:
+- **Disko Equivalence Test**:
   The generated disko mount scripts before and after refactoring must produce identical mount points and options.
-* **VCS Safety**:
+- **VCS Safety**:
   Use `jj` revisions per phase to allow instant rollback to `c1a58f6e` if evaluation drifts.

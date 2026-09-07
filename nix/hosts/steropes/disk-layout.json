@@ -1,1 +1,240 @@
-{"bcachefs_filesystems":{},"disk":{"boot":{"content":{"device":"/dev/disk/by-id/mmc-TWSC_0x29214bef","efiGptPartitionFirst":true,"partitions":{"ESP":{"alignment":0,"attributes":[],"content":{"device":"/dev/disk/by-partlabel/disk-boot-ESP","extraArgs":[],"format":"vfat","mountOptions":["defaults"],"mountpoint":"/boot","postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"filesystem"},"device":"/dev/disk/by-partlabel/disk-boot-ESP","end":"+1G","hybrid":null,"label":"disk-boot-ESP","name":"ESP","priority":1,"size":"1G","start":"0","type":"EF00","uuid":null},"zfs":{"alignment":0,"attributes":[],"content":{"device":"/dev/disk/by-partlabel/disk-boot-zfs","pool":"zroot","postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs"},"device":"/dev/disk/by-partlabel/disk-boot-zfs","end":"-0","hybrid":null,"label":"disk-boot-zfs","name":"zfs","priority":2,"size":"100%","start":"0","type":"8300","uuid":null}},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"gpt"},"destroy":true,"device":"/dev/disk/by-id/mmc-TWSC_0x29214bef","imageName":"boot","imageSize":"2G","name":"boot","postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"disk"}},"lvm_vg":{},"mdadm":{},"nodev":{},"zpool":{"zroot":{"datasets":{"cache":{"mountOptions":["defaults"],"mountpoint":null,"name":"cache","options":{"com.sun:auto-snapshot":"false","mountpoint":"none"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"local":{"mountOptions":["defaults"],"mountpoint":null,"name":"local","options":{"com.sun:auto-snapshot":"false","mountpoint":"none"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"local/nix":{"mountOptions":["defaults"],"mountpoint":"/nix","name":"local/nix","options":{"atime":"off","com.sun:auto-snapshot":"false"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"local/root":{"mountOptions":["defaults"],"mountpoint":"/","name":"local/root","options":{"com.sun:auto-snapshot":"false"},"postCreateHook":"zfs list -t snapshot -H -o name | grep -E '^zroot/local/root@blank$' || zfs snapshot zroot/local/root@blank","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"local/var":{"mountOptions":["defaults"],"mountpoint":"/var","name":"local/var","options":{"com.sun:auto-snapshot":"false"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"reserved":{"mountOptions":["defaults"],"mountpoint":null,"name":"reserved","options":{"mountpoint":"none","refreservation":"15G"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"safe":{"mountOptions":["defaults"],"mountpoint":null,"name":"safe","options":{"com.sun:auto-snapshot":"true","mountpoint":"none"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"safe/host":{"mountOptions":["defaults"],"mountpoint":"/persist/host","name":"safe/host","options":{"com.sun:auto-snapshot":"true"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"},"safe/user":{"mountOptions":["defaults"],"mountpoint":"/persist/user","name":"safe/user","options":{"com.sun:auto-snapshot":"true"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","type":"zfs_fs"}},"mode":{"topology":{"cache":[],"dedup":[],"log":[],"spare":[],"special":[],"type":"topology","vdev":[{"members":["boot"],"mode":""}]}},"mountOptions":["defaults"],"mountpoint":null,"name":"zroot","options":{"ashift":"12","autotrim":"on"},"postCreateHook":"","postMountHook":"","postUnmountHook":"","preCreateHook":"","preMountHook":"","preUnmountHook":"","rootFsOptions":{"atime":"off","com.sun:auto-snapshot":"false","compression":"lz4","recordsize":"64K","xattr":"sa"},"type":"zpool"}}}
+{
+  "bcachefs_filesystems": {},
+  "disk": {
+    "boot": {
+      "content": {
+        "device": "/dev/disk/by-id/mmc-TWSC_0x29214bef",
+        "efiGptPartitionFirst": true,
+        "partitions": {
+          "ESP": {
+            "alignment": 0,
+            "attributes": [],
+            "content": {
+              "device": "/dev/disk/by-partlabel/disk-boot-ESP",
+              "extraArgs": [],
+              "format": "vfat",
+              "mountOptions": ["defaults"],
+              "mountpoint": "/boot",
+              "postCreateHook": "",
+              "postMountHook": "",
+              "postUnmountHook": "",
+              "preCreateHook": "",
+              "preMountHook": "",
+              "preUnmountHook": "",
+              "type": "filesystem"
+            },
+            "device": "/dev/disk/by-partlabel/disk-boot-ESP",
+            "end": "+1G",
+            "hybrid": null,
+            "label": "disk-boot-ESP",
+            "name": "ESP",
+            "priority": 1,
+            "size": "1G",
+            "start": "0",
+            "type": "EF00",
+            "uuid": null
+          },
+          "zfs": {
+            "alignment": 0,
+            "attributes": [],
+            "content": {
+              "device": "/dev/disk/by-partlabel/disk-boot-zfs",
+              "pool": "zroot",
+              "postCreateHook": "",
+              "postMountHook": "",
+              "postUnmountHook": "",
+              "preCreateHook": "",
+              "preMountHook": "",
+              "preUnmountHook": "",
+              "type": "zfs"
+            },
+            "device": "/dev/disk/by-partlabel/disk-boot-zfs",
+            "end": "-0",
+            "hybrid": null,
+            "label": "disk-boot-zfs",
+            "name": "zfs",
+            "priority": 2,
+            "size": "100%",
+            "start": "0",
+            "type": "8300",
+            "uuid": null
+          }
+        },
+        "postCreateHook": "",
+        "postMountHook": "",
+        "postUnmountHook": "",
+        "preCreateHook": "",
+        "preMountHook": "",
+        "preUnmountHook": "",
+        "type": "gpt"
+      },
+      "destroy": true,
+      "device": "/dev/disk/by-id/mmc-TWSC_0x29214bef",
+      "imageName": "boot",
+      "imageSize": "2G",
+      "name": "boot",
+      "postCreateHook": "",
+      "postMountHook": "",
+      "postUnmountHook": "",
+      "preCreateHook": "",
+      "preMountHook": "",
+      "preUnmountHook": "",
+      "type": "disk"
+    }
+  },
+  "lvm_vg": {},
+  "mdadm": {},
+  "nodev": {},
+  "zpool": {
+    "zroot": {
+      "datasets": {
+        "cache": {
+          "mountOptions": ["defaults"],
+          "mountpoint": null,
+          "name": "cache",
+          "options": { "com.sun:auto-snapshot": "false", "mountpoint": "none" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "local": {
+          "mountOptions": ["defaults"],
+          "mountpoint": null,
+          "name": "local",
+          "options": { "com.sun:auto-snapshot": "false", "mountpoint": "none" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "local/nix": {
+          "mountOptions": ["defaults"],
+          "mountpoint": "/nix",
+          "name": "local/nix",
+          "options": { "atime": "off", "com.sun:auto-snapshot": "false" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "local/root": {
+          "mountOptions": ["defaults"],
+          "mountpoint": "/",
+          "name": "local/root",
+          "options": { "com.sun:auto-snapshot": "false" },
+          "postCreateHook": "zfs list -t snapshot -H -o name | grep -E '^zroot/local/root@blank$' || zfs snapshot zroot/local/root@blank",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "local/var": {
+          "mountOptions": ["defaults"],
+          "mountpoint": "/var",
+          "name": "local/var",
+          "options": { "com.sun:auto-snapshot": "false" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "reserved": {
+          "mountOptions": ["defaults"],
+          "mountpoint": null,
+          "name": "reserved",
+          "options": { "mountpoint": "none", "refreservation": "15G" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "safe": {
+          "mountOptions": ["defaults"],
+          "mountpoint": null,
+          "name": "safe",
+          "options": { "com.sun:auto-snapshot": "true", "mountpoint": "none" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "safe/host": {
+          "mountOptions": ["defaults"],
+          "mountpoint": "/persist/host",
+          "name": "safe/host",
+          "options": { "com.sun:auto-snapshot": "true" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        },
+        "safe/user": {
+          "mountOptions": ["defaults"],
+          "mountpoint": "/persist/user",
+          "name": "safe/user",
+          "options": { "com.sun:auto-snapshot": "true" },
+          "postCreateHook": "",
+          "postMountHook": "",
+          "postUnmountHook": "",
+          "preCreateHook": "",
+          "preMountHook": "",
+          "preUnmountHook": "",
+          "type": "zfs_fs"
+        }
+      },
+      "mode": {
+        "topology": {
+          "cache": [],
+          "dedup": [],
+          "log": [],
+          "spare": [],
+          "special": [],
+          "type": "topology",
+          "vdev": [{ "members": ["boot"], "mode": "" }]
+        }
+      },
+      "mountOptions": ["defaults"],
+      "mountpoint": null,
+      "name": "zroot",
+      "options": { "ashift": "12", "autotrim": "on" },
+      "postCreateHook": "",
+      "postMountHook": "",
+      "postUnmountHook": "",
+      "preCreateHook": "",
+      "preMountHook": "",
+      "preUnmountHook": "",
+      "rootFsOptions": {
+        "atime": "off",
+        "com.sun:auto-snapshot": "false",
+        "compression": "lz4",
+        "recordsize": "64K",
+        "xattr": "sa"
+      },
+      "type": "zpool"
+    }
+  }
+}

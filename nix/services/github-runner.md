@@ -12,10 +12,10 @@ Self-hosted runners for hercules (and any host that imports
 
 Example on hercules (`num = 4` each):
 
-| Container | PAT secret | Repos |
-|---|---|---|
-| `github-runners-tghanken` | `github_runner_tghanken.age` | `nixos-config`, `seneschal` |
-| `github-runners-actionable-work` | `github_runner_actionable_work.age` | `actionable` |
+| Container                        | PAT secret                          | Repos                       |
+| -------------------------------- | ----------------------------------- | --------------------------- |
+| `github-runners-tghanken`        | `github_runner_tghanken.age`        | `nixos-config`, `seneschal` |
+| `github-runners-actionable-work` | `github_runner_actionable_work.age` | `actionable`                |
 
 Shared with the host (by design): read-only `/nix/store`, read-only nix-daemon
 socket, and (optionally) the Docker socket. Containers **do not** run their own
@@ -58,20 +58,20 @@ or org → Settings → Personal access tokens if using an org-owned token).
 
 Under **Repository permissions**:
 
-| Permission | Access | Why |
-|---|---|---|
+| Permission         | Access         | Why                                                       |
+| ------------------ | -------------- | --------------------------------------------------------- |
 | **Administration** | Read and write | Required to create/manage self-hosted runners on the repo |
 
 That is the permission GitHub exposes for “repository self-hosted runners”.
-nixpkgs documents it as *Read and Write access to … repository self hosted runners*;
+nixpkgs documents it as _Read and Write access to … repository self hosted runners_;
 in the fine-grained UI this maps to **Administration** (not the separate Actions
 permission).
 
 If Administration alone fails registration, also try:
 
-| Permission | Access |
-|---|---|
-| **Actions** | Read and write |
+| Permission   | Access                                       |
+| ------------ | -------------------------------------------- |
+| **Actions**  | Read and write                               |
 | **Metadata** | Read-only (usually required / auto-included) |
 
 ### Org-wide runners (optional)
@@ -106,10 +106,10 @@ Public keys for those secrets are in `nix/modules/secrets/secret_files/secrets.n
 
 ## Classic PAT (fallback)
 
-| Use case | Classic scope |
-|---|---|
-| User/repo runners | `repo` |
-| Org-wide runners | `admin:org` |
+| Use case          | Classic scope |
+| ----------------- | ------------- |
+| User/repo runners | `repo`        |
+| Org-wide runners  | `admin:org`   |
 
 Prefer fine-grained tokens; classic scopes are broader than needed.
 

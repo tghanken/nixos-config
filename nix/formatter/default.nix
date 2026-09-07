@@ -15,55 +15,70 @@
   }: let
     globalExcludes = [
       "AGENTS.md"
-      "pnpm-lock.yaml"
-      "**/worker-configuration.d.ts"
+      "**/.direnv/**"
+      "**/result"
+      "**/result-*"
+      "**/*.age"
     ];
     nixExcludes = [];
 
-    dagPrograms = {
-      # Nix
-      deadnix = {
-        enable = true;
-        excludes = nixExcludes;
-      };
-      nixf-diagnose = {
-        enable = true;
-      };
-      statix = {
-        enable = true;
-      };
-      alejandra = {
-        enable = true;
-        excludes = nixExcludes;
-        after = ["deadnix" "nixf-diagnose" "statix"];
+    # Formatters grouped by domain / language
+    formattersByLanguage = {
+      nix = {
+        deadnix = {
+          enable = true;
+          excludes = nixExcludes;
+        };
+        nixf-diagnose = {
+          enable = true;
+        };
+        statix = {
+          enable = true;
+        };
+        alejandra = {
+          enable = true;
+          excludes = nixExcludes;
+          after = ["deadnix" "nixf-diagnose" "statix"];
+        };
       };
 
-      shfmt = {
-        enable = true;
+      shell = {
+        shfmt = {
+          enable = true;
+        };
+        shellcheck = {
+          enable = true;
+          after = ["shfmt"];
+        };
       };
-      shellcheck = {
-        enable = true;
-        after = ["shfmt"];
+
+      config = {
+        taplo = {
+          enable = true; # TOML
+        };
+        yamlfmt = {
+          enable = true; # YAML
+        };
+        actionlint = {
+          enable = true; # GitHub Actions Workflow Linter
+          after = ["yamlfmt"];
+        };
+        just = {
+          enable = true; # Justfile
+        };
       };
-      taplo = {
-        enable = true;
-      };
-      yamlfmt = {
-        enable = true;
-      };
-      actionlint = {
-        enable = true;
-      };
-      just = {
-        enable = true;
+
+      webAndDocs = {
+        oxfmt = {
+          enable = true; # Markdown, JSON, Web
+        };
       };
     };
 
-    dagCustomFormatters = {};
+    # Flatten language groups into master formatters set
+    allFormatters = lib.concatMapAttrs (_: v: v) formattersByLanguage;
 
-    allFormatters =
-      (lib.mapAttrs (_name: val: val // {_isCustom = false;}) dagPrograms)
-      // (lib.mapAttrs (_name: val: val // {_isCustom = true;}) dagCustomFormatters);
+    isCustomFormatter = f: f ? command || f.isCustom or false;
 
     formatterList = lib.mapAttrsToList (name: config: config // {inherit name;}) allFormatters;
 
@@ -76,7 +91,7 @@
 
     prioritizedFormatters = lib.listToAttrs (lib.imap0 (index: item:
       lib.nameValuePair item.name (
-        removeAttrs item ["name" "after" "_isCustom"]
+        removeAttrs item ["name" "after" "isCustom"]
         // {
           priority = index + 1;
         }
@@ -86,11 +101,11 @@
     treefmt = {
       projectRootFile = "flake.nix";
 
-      programs = lib.filterAttrs (name: _: !allFormatters.${name}._isCustom) prioritizedFormatters;
+      programs = lib.filterAttrs (_: f: !(isCustomFormatter f)) prioritizedFormatters;
 
       settings = {
         global.excludes = globalExcludes;
-        formatter = lib.filterAttrs (name: _: allFormatters.${name}._isCustom) prioritizedFormatters;
+        formatter = lib.filterAttrs (_: isCustomFormatter) prioritizedFormatters;
       };
     };
 
