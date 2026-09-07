@@ -120,17 +120,73 @@
     "/var/lib/bluetooth"
   ];
 
-  environment.persistence."/persist/user".users.tghanken.directories = [
-    ".mozilla"
-    ".config/spotify"
-    ".config/google-chrome"
-    ".config/chromium"
-    ".config/ghostty"
-    ".config/Slack"
-    ".config/dconf"
-    ".cinnamon"
-    ".local/share/cinnamon"
-    ".local/share/keyrings"
-    ".config/pulse"
-  ];
+  environment.persistence."/persist/user".users.tghanken = {
+    directories = [
+      # Browsers & Desktop GUI
+      ".mozilla"
+      ".config/spotify"
+      ".config/google-chrome"
+      ".config/chromium"
+      ".config/ghostty"
+      ".config/Slack"
+      ".config/dconf"
+      ".cinnamon"
+      ".local/share/cinnamon"
+      ".local/share/keyrings"
+      ".config/pulse"
+
+      # Antigravity IDE, agent brains, transcripts, and workspaces
+      ".gemini"
+      ".antigravity"
+      ".antigravity-ide"
+      ".config/Antigravity"
+      ".config/Antigravity IDE"
+
+      # Cloud, Kubernetes & Container Credentials
+      ".cloudflared"
+      ".kube"
+      ".docker"
+      ".config/gcloud"
+      ".railway"
+      ".talos"
+      ".fly"
+
+      # IDEs, Code Editors & Tooling
+      ".vscode"
+      ".vscode-shared"
+      ".config/Code"
+      ".cursor"
+      ".config/Cursor"
+      ".config/cursor"
+
+      # CLI & Shell Navigation State
+      ".local/share/zoxide"
+
+      # AI Runtimes & Agent Models
+      ".codex"
+      ".pi"
+      ".lmstudio"
+      ".config/LM Studio"
+      ".config/LM-Studio"
+      ".config/opencode"
+      ".local/share/opencode"
+      ".local/share/kilo"
+
+      # Communication & Meetings
+      ".thunderbird"
+      ".config/teams-for-linux"
+      ".zoom"
+    ];
+
+    files = [
+      # Display & Monitor Arrangements
+      ".config/cinnamon-monitors.xml"
+      ".config/monitors.xml"
+
+      # Desktop Mime Associations & Meeting Configs
+      ".config/mimeapps.list"
+      ".config/zoom.conf"
+      ".config/zoomus.conf"
+    ];
+  };
 }

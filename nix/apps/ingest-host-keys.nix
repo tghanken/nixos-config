@@ -18,18 +18,20 @@ in
     text = ''
       set -euo pipefail
 
+      ${keysLib.shellHelpers}
+
       usage() {
         cat <<'EOF'
       Usage: ingest-host-keys [host...] [options]
 
       Connects to running NixOS hosts over SSH, retrieves their active
-      /etc/ssh/ssh_host_ed25519_key, verifies it matches nix/hosts/<host>/key.pub,
+      /etc/ssh/ssh_host_ed25519_key, updates nix/hosts/<host>/key.pub,
       and encrypts it into nix/hosts/<host>/key.age using admin master keys.
 
       Options:
         --target <target> Target SSH connection string (valid only when a single host is specified)
-        --force           Re-encrypt and overwrite existing key.age
-        --dry-run         Verify remote host keys against key.pub without saving key.age
+        --force           Overwrite existing key.pub and key.age
+        --dry-run         Verify remote host keys without modifying files
         -h, --help        Show this help message
 
       Examples:
@@ -82,7 +84,7 @@ in
 
       if [ ''${#HOSTS[@]} -eq 0 ]; then
         for d in nix/hosts/*; do
-          if [ -d "$d" ] && [ -f "$d/key.pub" ]; then
+          if [ -d "$d" ]; then
             HOSTS+=("$(basename "$d")")
           fi
         done
@@ -112,13 +114,7 @@ in
           continue
         fi
 
-        if [ ! -f "$KEY_PUB" ]; then
-          echo "WARNING: Missing '$KEY_PUB' for host '$HOST'. Skipping." >&2
-          SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
-          continue
-        fi
-
-        if [ -f "$KEY_AGE" ] && [ "$FORCE" = false ]; then
+        if [ -f "$KEY_AGE" ] && [ -f "$KEY_PUB" ] && [ "$FORCE" = false ]; then
           echo "[SKIP] $HOST: $KEY_AGE already exists (use --force to overwrite)."
           SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
           continue
@@ -139,30 +135,49 @@ in
         fi
         chmod 600 "$FETCHED_KEY"
 
-        # Verify key matches committed key.pub
-        DERIVED_PUB=$(ssh-keygen -y -f "$FETCHED_KEY" 2>/dev/null || true)
-        EXPECTED_PUB=$(tr -d '\r\n' < "$KEY_PUB")
-
-        if [ "$DERIVED_PUB" != "$EXPECTED_PUB" ]; then
-          echo "[ERROR] $HOST: Fetched private key does not match committed $KEY_PUB!" >&2
-          echo "  Remote Public Key: $DERIVED_PUB" >&2
-          echo "  Committed in repo: $EXPECTED_PUB" >&2
+        # Derive normalized public key from fetched private key
+        DERIVED_PUB="$(derive_pubkey "$FETCHED_KEY")"
+        if [ -z "$DERIVED_PUB" ]; then
+          echo "[ERROR] $HOST: Failed to derive public key from fetched private key!" >&2
           FAILED_COUNT=$((FAILED_COUNT + 1))
           rm -f "$FETCHED_KEY"
           continue
         fi
 
+        # If key.pub exists and differs from fetched key, warn if not forcing
+        if [ -f "$KEY_PUB" ]; then
+          EXPECTED_PUB="$(normalize_pubkey "$KEY_PUB")"
+          if [ "$DERIVED_PUB" != "$EXPECTED_PUB" ]; then
+            if [ "$FORCE" = false ]; then
+              echo "[ERROR] $HOST: Remote key does not match committed $KEY_PUB!" >&2
+              echo "  Remote Public Key: $DERIVED_PUB" >&2
+              echo "  Committed in repo: $EXPECTED_PUB" >&2
+              echo "  Pass --force to overwrite both $KEY_PUB and $KEY_AGE with the live key." >&2
+              FAILED_COUNT=$((FAILED_COUNT + 1))
+              rm -f "$FETCHED_KEY"
+              continue
+            else
+              echo "[INFO] $HOST: Remote key differs from $KEY_PUB. Overwriting both files (--force)."
+            fi
+          fi
+        fi
+
         if [ "$DRY_RUN" = true ]; then
-          echo "[DRY RUN] $HOST: Remote key matches $KEY_PUB. Would encrypt to $KEY_AGE."
+          echo "[DRY RUN] $HOST: Would update $KEY_PUB and encrypt to $KEY_AGE."
           SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
           rm -f "$FETCHED_KEY"
           continue
         fi
 
-        # Encrypt with master recipients
-        rage -a -R "${masterRecipientsFile}" -o "$KEY_AGE" "$FETCHED_KEY"
+        # Write normalized public key
+        echo "$DERIVED_PUB" > "$KEY_PUB"
+        chmod 644 "$KEY_PUB"
+
+        # Encrypt with master recipients (binary format)
+        rage -R "${masterRecipientsFile}" -o "$KEY_AGE" "$FETCHED_KEY"
+        chmod 644 "$KEY_AGE"
         rm -f "$FETCHED_KEY"
-        echo "[OK] $HOST: Successfully encrypted key -> $KEY_AGE"
+        echo "[OK] $HOST: Successfully updated $KEY_PUB and $KEY_AGE"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
       done
 

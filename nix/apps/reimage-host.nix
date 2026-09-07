@@ -26,6 +26,8 @@ in
     text = ''
       set -euo pipefail
 
+      ${keysLib.shellHelpers}
+
       usage() {
         cat <<'EOF'
       Usage: reimage-host <host> [target] [options] [-- <extra nixos-anywhere args...>]
@@ -200,12 +202,10 @@ in
 
         # Verify decrypted private key against key.pub if present
         if [ -f "$KEY_PUB" ]; then
-          DERIVED_PUB=$(ssh-keygen -y -f "$PRIV_KEY" | tr -d '\r\n')
-          EXPECTED_PUB=$(tr -d '\r\n' < "$KEY_PUB")
-          if [ "$DERIVED_PUB" != "$EXPECTED_PUB" ]; then
+          if ! keys_match "$PRIV_KEY" "$KEY_PUB"; then
             echo "FATAL ERROR: Decrypted key does not match public key in '$KEY_PUB'!" >&2
-            echo "  Decrypted: $DERIVED_PUB" >&2
-            echo "  Expected:  $EXPECTED_PUB" >&2
+            echo "  Decrypted: $(derive_pubkey "$PRIV_KEY")" >&2
+            echo "  Expected:  $(normalize_pubkey "$KEY_PUB")" >&2
             exit 1
           fi
           echo "==> Verified: Private key matches committed $KEY_PUB"
@@ -222,9 +222,7 @@ in
         echo "==> Found $KEY_PUB but missing $KEY_AGE. Attempting live ingestion from $TARGET..."
         FETCHED_KEY="$STAGING_DIR/fetched_host_key"
         if ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new "$TARGET" "cat /etc/ssh/ssh_host_ed25519_key" > "$FETCHED_KEY" 2>/dev/null; then
-          DERIVED_PUB=$(ssh-keygen -y -f "$FETCHED_KEY" 2>/dev/null || true)
-          EXPECTED_PUB=$(tr -d '\r\n' < "$KEY_PUB")
-          if [ "$DERIVED_PUB" = "$EXPECTED_PUB" ]; then
+          if keys_match "$FETCHED_KEY" "$KEY_PUB"; then
             echo "==> Ingested matching host key from running node $TARGET."
             cp "$FETCHED_KEY" "$PRIV_KEY"
             chmod 600 "$PRIV_KEY"
@@ -234,6 +232,8 @@ in
             echo "==> Encrypted and saved active host key to $KEY_AGE."
           else
             echo "FATAL ERROR: Fetched remote key from $TARGET does not match $KEY_PUB!" >&2
+            echo "  Remote:   $(derive_pubkey "$FETCHED_KEY")" >&2
+            echo "  Expected: $(normalize_pubkey "$KEY_PUB")" >&2
             echo "Pass --new-key to explicitly generate a new host identity." >&2
             exit 1
           fi

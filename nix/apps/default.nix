@@ -32,6 +32,12 @@
       lib = inputs.nixpkgs.lib;
       agenix-rekey-pkg = config.agenix-rekey.package;
     };
+
+    rekeySecretsPkg = import ./rekey-secrets.nix {
+      inherit pkgs;
+      lib = inputs.nixpkgs.lib;
+      agenix-rekey-pkg = config.agenix-rekey.package;
+    };
   in {
     packages = {
       reimage-host = reimageHostPkg;
@@ -39,6 +45,7 @@
       ingest-syncthing-ids = ingestSyncthingIdsPkg;
       pregenerate-syncthing-keys = pregenerateSyncthingKeysPkg;
       update-disk-layouts = updateDiskLayoutsPkg;
+      rekey-secrets = rekeySecretsPkg;
     };
 
     apps = {
@@ -61,6 +68,10 @@
       update-disk-layouts = {
         type = "app";
         program = "${updateDiskLayoutsPkg}/bin/update-disk-layouts";
+      };
+      rekey-secrets = {
+        type = "app";
+        program = "${rekeySecretsPkg}/bin/rekey-secrets";
       };
     };
   };

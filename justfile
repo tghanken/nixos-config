@@ -9,9 +9,8 @@ clean:
     @rm -rf result-*
 
 [group("Secrets")]
-rekey-secrets:
-    @echo "Rekeying secrets..."
-    @agenix rekey
+rekey-secrets *ARGS="":
+    @nix run .#rekey-secrets -- {{ ARGS }}
 
 [group("Secrets")]
 edit-secret SECRET:

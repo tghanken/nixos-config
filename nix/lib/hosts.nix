@@ -18,13 +18,17 @@
     legacyDiskConfig = hostModule + "/disk-config.nix";
     hostPubkeyPath = hostModule + "/key.pub";
 
+    keysLib = import ./keys.nix {inherit lib;};
+
     # Host public key for agenix-rekey
     resolvedHostPubkey =
       if hostPubkey != null
-      then hostPubkey
+      then keysLib.normalizePubkey hostPubkey
       else if builtins.pathExists hostPubkeyPath
-      then lib.strings.trim (builtins.readFile hostPubkeyPath)
+      then keysLib.normalizePubkey (builtins.readFile hostPubkeyPath)
       else null;
+
+    hostKeyAgePath = hostModule + "/key.age";
 
     rekeyModule = {
       assertions = [
@@ -35,6 +39,15 @@
             Expected key at: ${toString hostPubkeyPath}
             Please generate or import the host key:
               ssh-keyscan <host> > nix/hosts/${hostName}/key.pub
+          '';
+        }
+        {
+          assertion = builtins.pathExists hostKeyAgePath;
+          message = ''
+            Host '${hostName}' is missing encrypted SSH host private key (key.age)!
+            Expected encrypted host key at: ${toString hostKeyAgePath}
+            Host builds require an encrypted host private key to be provisioned.
+            Run: nix run .#ingest-host-keys -- ${hostName}
           '';
         }
       ];

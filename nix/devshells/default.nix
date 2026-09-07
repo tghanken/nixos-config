@@ -19,6 +19,14 @@
         lib.concatStringsSep "\n" (builtins.filter (e: e.name != "NIXPKGS_PATH") config.env)
       );
     };
+    agenixWrapped = pkgs.writeShellScriptBin "agenix" ''
+      if [ "''${1:-}" = "rekey" ]; then
+        shift
+        exec ${config.packages.rekey-secrets}/bin/rekey-secrets "$@"
+      else
+        exec ${config.agenix-rekey.package}/bin/agenix "$@"
+      fi
+    '';
   in {
     devshells.base = {
       imports = [cleanStartupEnv];
@@ -33,7 +41,7 @@
         {package = pkgs.just;}
       ];
       packages = [
-        config.agenix-rekey.package
+        agenixWrapped
         inputs'.nixos-anywhere.packages.default
         inputs'.nix-fast-build.packages.default
         pkgs.colmena
