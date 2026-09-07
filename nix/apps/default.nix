@@ -26,11 +26,18 @@
       inherit pkgs;
       inherit (config) self;
     };
+
+    pregenerateSyncthingKeysPkg = import ./pregenerate-syncthing-keys.nix {
+      inherit pkgs;
+      lib = inputs.nixpkgs.lib;
+      agenix-rekey-pkg = config.agenix-rekey.package;
+    };
   in {
     packages = {
       reimage-host = reimageHostPkg;
       ingest-host-keys = ingestHostKeysPkg;
       ingest-syncthing-ids = ingestSyncthingIdsPkg;
+      pregenerate-syncthing-keys = pregenerateSyncthingKeysPkg;
       update-disk-layouts = updateDiskLayoutsPkg;
     };
 
@@ -46,6 +53,10 @@
       ingest-syncthing-ids = {
         type = "app";
         program = "${ingestSyncthingIdsPkg}/bin/ingest-syncthing-ids";
+      };
+      pregenerate-syncthing-keys = {
+        type = "app";
+        program = "${pregenerateSyncthingKeysPkg}/bin/pregenerate-syncthing-keys";
       };
       update-disk-layouts = {
         type = "app";

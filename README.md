@@ -21,18 +21,19 @@ All hosts categorize state into four distinct tiers to eliminate configuration d
 
 The repository includes a [justfile](file:///home/tghanken/Repos/os/nixos-config/justfile) with shortcuts for day-to-day operations:
 
-| Task                 | Command                        | Alias            | Description                                                                          |
-| :------------------- | :----------------------------- | :--------------- | :----------------------------------------------------------------------------------- |
-| **Format**           | `nix fmt`                      | —                | Format all files using DAG-ordered treefmt (Alejandra, Shfmt, Taplo, Yamlfmt, Oxfmt) |
-| **Validate**         | `nix flake check`              | —                | Run all CI checks, disk layout contracts, and package builds                         |
-| **Update Layouts**   | `just update-disk-layouts`     | `just udl`       | Regenerate checked-in `disk-layout.json` contracts across all hosts                  |
-| **Deploy Fleet**     | `just deploy [target]`         | —                | Deploy changes to servers (or a target host/tag) via Colmena                         |
-| **Deploy All**       | `just deploy-all`              | —                | Apply closures to all reachable fleet nodes                                          |
-| **Edit Secret**      | `just edit-secret <name>`      | `just es <name>` | Decrypt, edit, and re-encrypt a master secret with `agenix`                          |
-| **Rekey Secrets**    | `just rekey-secrets`           | `just rs`        | Rekey secrets for all hosts using `agenix-rekey`                                     |
-| **Re-image Host**    | `just reimage <host> [target]` | —                | Idempotently wipe, partition, restore backups, and reinstall a host                  |
-| **Ingest Host Keys** | `just ingest-keys [hosts...]`  | —                | Retrieve and encrypt active SSH host keys from running nodes                         |
-| **Ingest Sync IDs**  | `just ingest-syncthing-ids`    | `just isi`       | Query running workstations and record Syncthing device IDs for auto-discovery        |
+| Task                 | Command                                  | Alias            | Description                                                                          |
+| :------------------- | :--------------------------------------- | :--------------- | :----------------------------------------------------------------------------------- |
+| **Format**           | `nix fmt`                                | —                | Format all files using DAG-ordered treefmt (Alejandra, Shfmt, Taplo, Yamlfmt, Oxfmt) |
+| **Validate**         | `nix flake check`                        | —                | Run all CI checks, disk layout contracts, and package builds                         |
+| **Update Layouts**   | `just update-disk-layouts`               | `just udl`       | Regenerate checked-in `disk-layout.json` contracts across all hosts                  |
+| **Deploy Fleet**     | `just deploy [target]`                   | —                | Deploy changes to servers (or a target host/tag) via Colmena                         |
+| **Deploy All**       | `just deploy-all`                        | —                | Apply closures to all reachable fleet nodes                                          |
+| **Edit Secret**      | `just edit-secret <name>`                | `just es <name>` | Decrypt, edit, and re-encrypt a master secret with `agenix`                          |
+| **Rekey Secrets**    | `just rekey-secrets`                     | `just rs`        | Rekey secrets for all hosts using `agenix-rekey`                                     |
+| **Re-image Host**    | `just reimage <host> [target]`           | —                | Idempotently wipe, partition, restore backups, and reinstall a host                  |
+| **Ingest Host Keys** | `just ingest-keys [hosts...]`            | —                | Retrieve and encrypt active SSH host keys from running nodes                         |
+| **Pregenerate Sync** | `just pregenerate-syncthing-keys [host]` | `just psk`       | Pregenerate Syncthing cert, ID, and age key for workstations                         |
+| **Ingest Sync IDs**  | `just ingest-syncthing-ids`              | `just isi`       | Query running workstations for Syncthing device IDs (legacy fallback)                |
 
 ---
 
@@ -83,7 +84,23 @@ just update-disk-layouts # or: just udl
 
 This generates `nix/hosts/<hostname>/disk-layout.json`, which CI checks against during `nix flake check`.
 
-### 3. Deploy via `reimage-host`
+### 3. Pregenerate Syncthing Identity (Workstations Only)
+
+If setting up a workstation (`roles/workstation.nix`), pregenerate its TLS keypair and Syncthing Device ID before deployment:
+
+```bash
+just pregenerate-syncthing-keys <hostname> # or: just psk <hostname>
+```
+
+This writes `nix/hosts/<hostname>/syncthing/{id, cert.pem, key.age}` and runs `agenix rekey`.
+
+> [!IMPORTANT]
+> Preregistration is **mandatory** for sync-active hosts. NixOS configuration builds will fail with an assertion error if `syncthing/cert.pem` and `syncthing/key.age` are missing.
+
+> [!TIP]
+> If you bootstrap using `reimage-host`, it will automatically detect that `<hostname>` is a workstation and generate these keys on the fly before running `agenix rekey`.
+
+### 4. Deploy via `reimage-host`
 
 If bootstrapping a bare-metal machine or non-NixOS live image:
 
@@ -94,10 +111,11 @@ nix run .#reimage-host -- <hostname> root@<IP> --kexec
 `reimage-host` will automatically:
 
 1. Detect that `<hostname>` lacks an identity, generate a new Ed25519 host keypair, write `key.pub`, and encrypt `key.age` using master keys.
-2. Run `agenix rekey` so the new host can decrypt its secrets.
-3. Partition and format the machine with Disko.
-4. Stage SSH host keys into `/persist/host/etc/ssh`.
-5. Install the closure and reboot.
+2. Detect if `<hostname>` is a workstation and pregenerate Syncthing identity keys if not already present.
+3. Run `agenix rekey` so the new host can decrypt its secrets.
+4. Partition and format the machine with Disko.
+5. Stage SSH host keys into `/persist/host/etc/ssh`.
+6. Install the closure and reboot.
 
 ---
 
@@ -177,12 +195,16 @@ just deploy-dry          # Builds closures locally without pushing to targets
 
 Workstations automatically discover peer workstations for real-time folder sync:
 
-- **How it works**: [nix/features/sync.nix](file:///home/tghanken/Repos/os/nixos-config/nix/features/sync.nix) inspects `nix/hosts/` for any peer node containing `syncthing.id` and adds it to the private mesh on `tailscale0:22000`.
-- **Registering a Host's ID**:
+- **How it works**: [nix/features/sync.nix](file:///home/tghanken/Repos/os/nixos-config/nix/features/sync.nix) inspects `nix/hosts/` for any peer node containing `syncthing/id` and adds it to the private mesh on `tailscale0:22000`.
+- **Declarative Identity in `syncthing/`**:
+  - `syncthing/cert.pem`: Public TLS certificate placed in the Nix store and installed into `~/.config/syncthing/` at boot.
+  - `syncthing/id`: Public device ID (SHA-256 of `cert.pem`) used by peer nodes to configure mesh pairings.
+  - `syncthing/key.age`: Private TLS key encrypted with `agenix-rekey` and staged to `~/.config/syncthing/` with mode `0600` via systemd `ExecStartPre`.
+- **Mandatory Preregistration**:
   ```bash
-  just ingest-syncthing-ids <hostname> # (alias: just isi <hostname>)
+  just pregenerate-syncthing-keys <hostname> # (alias: just psk <hostname>)
   ```
-  This queries the host via SSH and commits `nix/hosts/<hostname>/syncthing.id`.
+  Sync-enabled workstations enforce an assertion that `syncthing/cert.pem` and `syncthing/key.age` must be present before the build succeeds, preventing accidental deployments without sync credentials.
 - **Sync Folders**: Shared folders (`Documents`, `Pictures`) are registered by feature/role modules and automatically synchronize across all discovered peer workstations.
 
 ### Backups (`restic`)

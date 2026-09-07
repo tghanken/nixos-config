@@ -67,7 +67,11 @@ pkgs.writeShellApplication {
 
     for host in "''${HOSTS[@]}"; do
       target="''${CUSTOM_TARGET:-root@$host}"
-      out_file="nix/hosts/$host/syncthing.id"
+      if [ -d "nix/hosts/$host/syncthing" ]; then
+        out_file="nix/hosts/$host/syncthing/id"
+      else
+        out_file="nix/hosts/$host/syncthing.id"
+      fi
 
       echo "--> Fetching Syncthing ID from $host ($target)..."
       DEVICE_ID=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$target" '

@@ -29,6 +29,12 @@ ingest-keys *HOSTS="":
     @nix run .#ingest-host-keys -- {{ HOSTS }}
 
 [group("Deployment")]
+pregenerate-syncthing-keys *HOSTS="":
+    @nix run .#pregenerate-syncthing-keys -- {{ HOSTS }}
+
+alias psk := pregenerate-syncthing-keys
+
+[group("Deployment")]
 ingest-syncthing-ids *HOSTS="":
     @nix run .#ingest-syncthing-ids -- {{ HOSTS }}
 

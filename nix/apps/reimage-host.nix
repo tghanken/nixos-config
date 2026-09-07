@@ -18,6 +18,7 @@ in
         pkgs.coreutils
         pkgs.git
         pkgs.restic
+        pkgs.syncthing
         nixos-anywhere
       ]
       ++ lib.optional (agenix-rekey-pkg != null) agenix-rekey-pkg;
@@ -214,8 +215,31 @@ in
         cp "$PUB_KEY" "$KEY_PUB"
         echo "==> Wrote new public key to $KEY_PUB"
 
-        rage -a -R "${masterRecipientsFile}" -o "$KEY_AGE" "$PRIV_KEY"
+        rage -R "${masterRecipientsFile}" -o "$KEY_AGE" "$PRIV_KEY"
         echo "==> Encrypted new private key to $KEY_AGE with master recipients."
+
+        # Workstation Syncthing identity pregeneration
+        if [ -f "nix/hosts/$HOST/default.nix" ] && grep -q "roles/workstation.nix" "nix/hosts/$HOST/default.nix"; then
+          ST_DIR="nix/hosts/$HOST/syncthing"
+          mkdir -p "$ST_DIR"
+          ST_KEY_AGE="$ST_DIR/key.age"
+          ST_CERT="$ST_DIR/cert.pem"
+          ST_ID="$ST_DIR/id"
+          if [ ! -f "$ST_KEY_AGE" ] || [ ! -f "$ST_CERT" ] || [ ! -f "$ST_ID" ]; then
+            echo "==> Pregenerating Syncthing identity for workstation $HOST..."
+            ST_TMP=$(mktemp -d)
+            syncthing generate --home "$ST_TMP" >/dev/null 2>&1
+            ST_DEV_ID=$(syncthing --home "$ST_TMP" device-id 2>/dev/null | tr -d '\r\n')
+            echo "$ST_DEV_ID" > "$ST_ID"
+            chmod 644 "$ST_ID"
+            cp "$ST_TMP/cert.pem" "$ST_CERT"
+            chmod 644 "$ST_CERT"
+            rage -R "${masterRecipientsFile}" -o "$ST_KEY_AGE" "$ST_TMP/key.pem"
+            chmod 644 "$ST_KEY_AGE"
+            rm -rf "$ST_TMP"
+            echo "==> Wrote Syncthing identity ($ST_DEV_ID) and encrypted key for $HOST."
+          fi
+        fi
 
         if command -v agenix >/dev/null 2>&1; then
           echo "==> Running agenix rekey for new host..."
