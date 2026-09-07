@@ -1,111 +1,191 @@
 # nixos-config
 
-## Getting Started (Wireless Local Computer)
+Declarative, multi-host NixOS configuration with 4-tier data lifecycle management, ZFS impermanence, Tailscale mesh networking, declarative Syncthing synchronization, and automated Restic backups.
 
-- Build all packages: `nix-fast-build`
-- Burn iso to a usb drive: `sudo dd bs=4M conv=fsync oflag=direct status=progress if=result-x86_64-linux.pkgs-node-bootstrap-iso/iso/nixos-25.11.20251204.c97c47f-x86_64-linux.iso of=/dev/sdX`
-- Plug iso usb drive into computer and boot
-- Login with user added to bootstrap iso
-- Run `iwctl` to start wireless connection process
-  - Run `station list` to get wireless interfaces
-  - Run `station <interface> connect <SSID>` to connect to your wireless network
+---
 
-## Host Provisioning & Idempotent Re-imaging (`reimage-host`)
+## 4-Tier Data Lifecycle Architecture
 
-Host SSH identities are preserved across full disk wipes by storing their encrypted private key in `nix/hosts/<HOST>/key.age` (encrypted with master admin keys).
+All hosts categorize state into four distinct tiers to eliminate configuration drift while preserving essential data and warm build caches:
 
-### Re-imaging an Existing Host
+| Tier       | Classification              | Reboot Lifecycle | Local Snapshots | Remote Backups        | Cross-Host Sync    | Target ZFS Dataset / Path                                                                  |
+| :--------- | :-------------------------- | :--------------- | :-------------- | :-------------------- | :----------------- | :----------------------------------------------------------------------------------------- |
+| **Tier 1** | **Impermanent (Scratch)**   | Wiped on boot    | ❌ No           | ❌ No                 | ❌ No              | `zroot/local/root` (rolled back to `@blank` in initrd), `tmpfs` (`/tmp`)                   |
+| **Tier 2** | **Ephemeral (Warm Caches)** | Preserved        | ❌ No           | ❌ No                 | ❌ No              | `zroot/cache/*` (`~/.cache`, `~/.cargo`, `pnpm`, `bun`, `docker`, `/data/models`, `steam`) |
+| **Tier 3** | **Host Persistent**         | Preserved        | ✅ Yes          | ✅ Yes (`--tag host`) | ❌ No              | `zroot/safe/host` (`/persist/host` - machine identity, logs, host keys)                    |
+| **Tier 4** | **User Persistent**         | Preserved        | ✅ Yes          | ✅ Yes (`--tag user`) | ✅ Yes (Syncthing) | `zroot/safe/user` (`/persist/user` - Repos, Documents, user dotfiles)                      |
 
-To wipe disks, format with Disko, and reinstall while preserving the host's identity and `agenix-rekey` decryption capabilities:
+---
 
-```bash
-just reimage <HOST> <TARGET-IP>
-# or:
-nix run .#reimage-host -- <HOST> root@<TARGET-IP>
+## Quick Reference (`just`)
+
+The repository includes a [justfile](file:///home/tghanken/Repos/os/nixos-config/justfile) with shortcuts for day-to-day operations:
+
+| Task                 | Command                        | Alias            | Description                                                                          |
+| :------------------- | :----------------------------- | :--------------- | :----------------------------------------------------------------------------------- |
+| **Format**           | `nix fmt`                      | —                | Format all files using DAG-ordered treefmt (Alejandra, Shfmt, Taplo, Yamlfmt, Oxfmt) |
+| **Validate**         | `nix flake check`              | —                | Run all CI checks, disk layout contracts, and package builds                         |
+| **Update Layouts**   | `just update-disk-layouts`     | `just udl`       | Regenerate checked-in `disk-layout.json` contracts across all hosts                  |
+| **Deploy Fleet**     | `just deploy [target]`         | —                | Deploy changes to servers (or a target host/tag) via Colmena                         |
+| **Deploy All**       | `just deploy-all`              | —                | Apply closures to all reachable fleet nodes                                          |
+| **Edit Secret**      | `just edit-secret <name>`      | `just es <name>` | Decrypt, edit, and re-encrypt a master secret with `agenix`                          |
+| **Rekey Secrets**    | `just rekey-secrets`           | `just rs`        | Rekey secrets for all hosts using `agenix-rekey`                                     |
+| **Re-image Host**    | `just reimage <host> [target]` | —                | Idempotently wipe, partition, restore backups, and reinstall a host                  |
+| **Ingest Host Keys** | `just ingest-keys [hosts...]`  | —                | Retrieve and encrypt active SSH host keys from running nodes                         |
+| **Ingest Sync IDs**  | `just ingest-syncthing-ids`    | `just isi`       | Query running workstations and record Syncthing device IDs for auto-discovery        |
+
+---
+
+## Creating a New Machine (Step-by-Step)
+
+### 1. Define Host Configuration
+
+Create `nix/hosts/<hostname>/default.nix`:
+
+```nix
+{ inputs, ... }: {
+  imports = [
+    # Hardware additions (nixos-hardware or facter report)
+    # Role
+    ../../roles/server.nix # or ../../roles/workstation.nix
+    # Features & Services as needed
+  ];
+
+  networking.hostId = "<8-hex-chars>"; # e.g. head -c 8 /etc/machine-id
+  system.stateVersion = "25.11";
+}
 ```
 
-If the host is not yet running NixOS (e.g. booted into a generic live rescue environment), pass `--kexec`:
+### 2. Register in Fleet Matrix
 
-```bash
-nix run .#reimage-host -- <HOST> root@<TARGET-IP> --kexec
+In [nix/hosts/default.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/default.nix), register the host in the `hosts` attribute set:
+
+```nix
+<hostname> = {
+  hostName = "<hostname>";
+  hostModule = ./<hostname>;
+  diskRole = "server-local"; # "workstation" | "server-local" | "server-remote"
+  disks = [ "/dev/disk/by-id/..." ];
+  swap = {
+    zfsEnd = "-4G";
+    encryptedSize = "4G";
+  };
+};
 ```
 
-### Ingesting Active Host Keys
+### 3. Generate Disk Layout Contract
 
-To back up and encrypt the active SSH host private keys from running nodes into `nix/hosts/<HOST>/key.age`:
+Run:
 
 ```bash
-just ingest-keys
-# or for a specific host:
-nix run .#ingest-host-keys -- <HOST> --target root@<IP>
+just update-disk-layouts # or: just udl
 ```
 
-### Provisioning a Brand New Host
+This generates `nix/hosts/<hostname>/disk-layout.json`, which CI checks against during `nix flake check`.
 
-1. Define the host in `nix/hosts/default.nix` (with disks, role, etc.).
-2. Run `nix run .#reimage-host -- <HOST> root@<IP>` (or `--kexec`).
-   `reimage-host` will automatically generate a new keypair, commit `key.pub`, encrypt `key.age`, run `agenix rekey`, and deploy via `nixos-anywhere`.
+### 4. Deploy via `reimage-host`
 
-## Fleet Deployment (`colmena`)
+If bootstrapping a bare-metal machine or non-NixOS live image:
 
-Server updates are managed via push-based Colmena. All evaluations and builds run locally on your controller hardware (`buildOnTarget = false`), pushing final closures to nodes over SSH/Tailscale.
+```bash
+nix run .#reimage-host -- <hostname> root@<IP> --kexec
+```
 
-- **Deploy all online servers (default)**:
+`reimage-host` will automatically:
+
+1. Detect that `<hostname>` lacks an identity, generate a new Ed25519 host keypair, write `key.pub`, and encrypt `key.age` using master keys.
+2. Run `agenix rekey` so the new host can decrypt its secrets.
+3. Partition and format the machine with Disko.
+4. Stage SSH host keys into `/persist/host/etc/ssh`.
+5. Install the closure and reboot.
+
+---
+
+## Re-imaging an Existing Host (`reimage-host`)
+
+To wipe a host's disks and reinstall cleanly while preserving secrets, identity, and persistent state:
+
+```bash
+just reimage <hostname> root@<IP>
+```
+
+### What Happens Automatically:
+
+1. **Host Identity Preservation**: Verifies the remote host key matches `nix/hosts/<hostname>/key.pub` and decrypts `key.age`.
+2. **Disko Partitioning**: Partitions the disk(s) and creates fresh ZFS datasets.
+3. **Automated Restic Restore**:
+   - Queries the fleet's Cloudflare R2 repository for the latest snapshot matching `--host <hostname> --tag host`.
+   - Restores `/persist/host` state directly into `/mnt/persist/host`.
+   - Restores `/persist/user` state if user backup exists.
+4. **Key Staging**: Stages decrypted host keys into `/mnt/persist/host/etc/ssh`.
+5. **Installation & Reboot**: Deploys the system closure and reboots into a clean, restored node.
+
+### Flags:
+
+- `--kexec`: Use kexec tarball to bootstrap machines booted from a generic rescue ISO.
+- `--no-restore`: Skip restoring Restic backups to start with a fresh `/persist` state.
+- `--dry-run`: Validate staged keys and commands without executing disk operations.
+
+---
+
+## Day-to-Day Operations
+
+### Code Quality & Formatting
+
+We use [treefmt-nix](https://github.com/numtide/treefmt-nix) with a DAG-ordered pipeline configured in [nix/formatter/default.nix](file:///home/tghanken/Repos/os/nixos-config/nix/formatter/default.nix):
+
+- **Nix**: `deadnix` $\to$ `nixf-diagnose` $\to$ `statix` $\to$ `alejandra`
+- **Shell**: `shfmt` $\to$ `shellcheck`
+- **Config**: `taplo` (TOML), `yamlfmt` (YAML), `just` (Justfile), `actionlint` (GitHub Workflows)
+- **Docs & Web**: `oxfmt` (Markdown, JSON, Web)
+
+Run:
+
+```bash
+nix fmt            # Formats all repository files
+nix flake check    # Validates flake checks, derivations, and layout contracts
+```
+
+### Secrets Management (`agenix-rekey`)
+
+Secrets are encrypted with age keys and distributed declaratively without a centralized `secrets.nix`:
+
+```bash
+just edit-secret <secret_name>   # (alias: just es <name>) Edit master secret
+just rekey-secrets               # (alias: just rs) Rekey per-host secrets
+```
+
+- Master secrets: `nix/core/secrets/secret_files/*.age`
+- Encrypted host keys: `nix/hosts/<host>/key.age`
+- Per-host derived secrets: `nix/core/secrets/rekeyed/<host>/*.age`
+
+### Fleet Deployment (`colmena`)
+
+Deploy configuration changes to servers across the Tailscale network:
+
+```bash
+just deploy              # Deploys to all online servers (@server tag)
+just deploy <hostname>   # Deploys to a specific host (e.g. just deploy arges)
+just deploy-all          # Deploys to all fleet nodes
+just deploy-dry          # Builds closures locally without pushing to targets
+```
+
+### Cross-Host Synchronization (Syncthing over Tailscale)
+
+Workstations automatically discover peer workstations for real-time folder sync:
+
+- **How it works**: [nix/features/sync.nix](file:///home/tghanken/Repos/os/nixos-config/nix/features/sync.nix) inspects `nix/hosts/` for any peer node containing `syncthing.id` and adds it to the private mesh on `tailscale0:22000`.
+- **Registering a Host's ID**:
   ```bash
-  just deploy
-  # or: colmena apply --impure --on @server --keep-going
+  just ingest-syncthing-ids <hostname> # (alias: just isi <hostname>)
   ```
-- **Deploy a specific node or tag**:
-  ```bash
-  just deploy arges
-  just deploy @workstation
-  ```
-- **Dry run / build closures without deploying**:
-  ```bash
-  just deploy-dry
-  ```
+  This queries the host via SSH and commits `nix/hosts/<hostname>/syncthing.id`.
+- **Sync Folders**: Shared folders (`Documents`, `Pictures`) are registered by feature/role modules and automatically synchronize across all discovered peer workstations.
 
-## Secrets Management (`agenix-rekey`)
+### Backups (`restic`)
 
-Secrets are managed declaratively with `agenix-rekey`. There is no `secrets.nix` file; recipient hosts are automatically inferred from the module hierarchy.
-
-- **Edit or create a secret**:
-  ```bash
-  just es <secret_name>
-  # or: agenix edit nix/core/secrets/secret_files/<secret_name>.age
-  ```
-- **Rekey secrets across all hosts**:
-  ```bash
-  just rs
-  # or: agenix rekey
-  ```
-- **View secret content**:
-  ```bash
-  agenix view nix/core/secrets/secret_files/<secret_name>.age
-  ```
-
-Master secrets are located in `nix/core/secrets/secret_files/`. Rekeyed per-host secrets are stored in `nix/core/secrets/rekeyed/<host>/`.
-
-## YubiKey Setup (Hardware Master Identity)
-
-Workstations have `pcscd`, `yubikey-personalization`, and `age-plugin-yubikey` installed. When ready to use a YubiKey as your master identity:
-
-1. Plug in your YubiKey and verify detection:
-   ```bash
-   age-plugin-yubikey -l
-   ```
-2. Generate an age identity stub (public metadata only, safe to commit):
-   ```bash
-   age-plugin-yubikey > nix/core/secrets/yubikey.pub
-   ```
-3. Update `age.rekey.masterIdentities` in `nix/core/secrets/default.nix`:
-   ```nix
-   masterIdentities = [
-     ./yubikey.pub
-   ];
-   ```
-4. Re-encrypt master secrets to the new master key:
-   ```bash
-   agenix update-masterkeys
-   just rs
-   ```
+- **Single Repository Deduplication**: All hosts back up to a shared Cloudflare R2 repository (`s3:https://<account>.r2.cloudflarestorage.com/<bucket>/nixos`). Content-defined chunking (CDC) deduplicates common packages, code, and configurations across the fleet.
+- **Tag Isolation**:
+  - `host-state`: Backs up `/persist/host` with `--tag host` and `--host <hostname>`.
+  - `user-state`: Backs up `/persist/user` with `--tag user`.
+- **Prune Coordination**: Pruning (`forget --prune`) requires exclusive locks. Only the primary workstation (`hercules`, configured via `isPrimary = true`) executes pruning timers to avoid lock collisions.
