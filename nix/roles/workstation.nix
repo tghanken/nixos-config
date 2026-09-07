@@ -8,6 +8,9 @@
     ../features/sync.nix
   ];
 
+  # Storage role
+  storage.role = "workstation";
+
   # Workstations (especially laptops) retain auto-upgrade when online
   system.autoUpgrade.enable = lib.mkDefault true;
 

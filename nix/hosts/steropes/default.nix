@@ -6,4 +6,8 @@
 
   networking.hostId = "2ebead4e";
   system.stateVersion = "25.11";
+
+  storage.disks = [
+    "/dev/disk/by-id/mmc-TWSC_0x29214bef"
+  ];
 }

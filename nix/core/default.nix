@@ -5,6 +5,7 @@
     ./tailscale.nix
     ./impermanence.nix
     ./secrets
+    ./storage.nix
   ];
 
   # GitHub PAT for Nix rate limits
