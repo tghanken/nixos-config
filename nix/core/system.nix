@@ -45,7 +45,7 @@
   networking.useNetworkd = true;
   networking.dhcpcd.enable = false;
 
-  environment.persistence."/persist" = {
+  environment.persistence."/persist/host" = {
     directories = [
       "/etc/NetworkManager/system-connections"
     ];

@@ -14,10 +14,20 @@ in {
 
   options.services.impermanence = {
     enable = mkEnableOption "Impermanence root rollback and persistence" // {default = true;};
+    hostPersistPath = mkOption {
+      type = types.str;
+      default = "/persist/host";
+      description = "Root path where host-specific persistent files and directories are mounted.";
+    };
+    userPersistPath = mkOption {
+      type = types.str;
+      default = "/persist/user";
+      description = "Root path where user-specific persistent files and directories are mounted.";
+    };
     persistPath = mkOption {
       type = types.str;
-      default = "/persist";
-      description = "Root path where persistent files and directories are mounted.";
+      default = "/persist/host";
+      description = "Alias/default for host-specific persistent root.";
     };
     user = mkOption {
       type = types.str;
@@ -57,7 +67,8 @@ in {
     # Filesystems used for persistent / ephemeral mounts must be marked neededForBoot
     fileSystems = {
       "/var".neededForBoot = mkIf (config.fileSystems ? "/var") (mkDefault true);
-      "${cfg.persistPath}".neededForBoot = mkIf (config.fileSystems ? "${cfg.persistPath}") (mkDefault true);
+      "${cfg.hostPersistPath}".neededForBoot = mkIf (config.fileSystems ? "${cfg.hostPersistPath}") (mkDefault true);
+      "${cfg.userPersistPath}".neededForBoot = mkIf (config.fileSystems ? "${cfg.userPersistPath}") (mkDefault true);
     };
 
     # Automatically derive directory ownership for filesystems mounted inside user home or /data
@@ -67,12 +78,14 @@ in {
     in
       [
         "d ${userHome} 0700 ${cfg.user} users -"
-        "d ${cfg.persistPath}${userHome} 0700 ${cfg.user} users -"
+        "d ${cfg.hostPersistPath} 0755 root root -"
+        "d ${cfg.userPersistPath} 0755 root root -"
+        "d ${cfg.userPersistPath}${userHome} 0700 ${cfg.user} users -"
       ]
       ++ (lib.mapAttrsToList (mp: _: "d ${mp} 0755 ${cfg.user} users -") managedMounts);
 
-    # Base OS persistent files and directories
-    environment.persistence.${cfg.persistPath} = {
+    # Base OS persistent files and directories (Tier 3: Host Persistent)
+    environment.persistence.${cfg.hostPersistPath} = {
       hideMounts = true;
       directories = [
         "/var/log"
@@ -88,7 +101,7 @@ in {
 
     # Ensure agenix finds host keys regardless of mount state
     age.identityPaths = [
-      "${cfg.persistPath}/etc/ssh/ssh_host_ed25519_key"
+      "${cfg.hostPersistPath}/etc/ssh/ssh_host_ed25519_key"
       "/etc/ssh/ssh_host_ed25519_key"
     ];
   };

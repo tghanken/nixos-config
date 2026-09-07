@@ -29,7 +29,7 @@ in {
     # enable the tailscale service
     services.tailscale.enable = true;
 
-    environment.persistence."/persist" = {
+    environment.persistence."/persist/host" = {
       directories = [
         "/var/lib/tailscale"
       ];

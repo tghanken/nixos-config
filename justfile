@@ -29,6 +29,12 @@ ingest-keys *HOSTS="":
     @nix run .#ingest-host-keys -- {{ HOSTS }}
 
 [group("Deployment")]
+ingest-syncthing-ids *HOSTS="":
+    @nix run .#ingest-syncthing-ids -- {{ HOSTS }}
+
+alias isi := ingest-syncthing-ids
+
+[group("Deployment")]
 deploy TARGET="@server":
     @colmena apply --impure --on "{{ TARGET }}" --keep-going
 

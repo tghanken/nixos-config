@@ -1,6 +1,17 @@
-# Storage Redesign Plan: ZFS Dataset Tiering, Impermanence & Restic Backups
+# Storage Architecture Plan: 4-Tier Lifecycle, Impermanence & Cross-Host Sync
 
-Comprehensive architectural plan for overhauling storage on **hercules** and **pegasus** from first principles.
+Comprehensive architectural specification for the storage, persistence, synchronization, and backup model across **hercules**, **pegasus**, and the NixOS fleet.
+
+---
+
+## The 4-Tier Data Model
+
+| Tier | Classification | Reboot Lifecycle | Local Snapshots | Remote Backups | Cross-Host Sync | Target ZFS Dataset / Mount |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Tier 1** | **Impermanent (Scratch)** | Wiped on boot | ❌ No | ❌ No | ❌ No | `zroot/local/root` (rollback `@blank`), `tmpfs` |
+| **Tier 2** | **Ephemeral (Warm Caches)** | Preserved | ❌ No | ❌ No | ❌ No | `zroot/cache/*` (`~/.cache`, `~/.cargo`, `pnpm`, `bun`, `docker`, `/data/models`) |
+| **Tier 3** | **Host Persistent** | Preserved | ✅ Yes | ✅ Yes (tagged `host`) | ❌ No | `zroot/safe/host` (`/persist/host`) |
+| **Tier 4** | **User Persistent** | Preserved | ✅ Yes | ✅ Yes (tagged `user`) | ✅ Yes (module-scoped) | `zroot/safe/user` (`/persist/user`) |
 
 ---
 
@@ -10,89 +21,73 @@ Comprehensive architectural plan for overhauling storage on **hercules** and **p
 zroot/
 ├── reserved                              (refreservation=15G, mountpoint=none)
 │
-├── local/                                (com.sun:auto-snapshot=false, mountpoint=none)
+├── local/                                (Tier 1: com.sun:auto-snapshot=false, mountpoint=none)
 │   ├── root              -> /            (ephemeral root, rolled back to @blank on boot)
 │   ├── nix               -> /nix         (Nix store, managed by nix-daemon)
-│   ├── var               -> /var         (VMs, system state, ephemeral container layers)
-│   ├── docker            -> /var/lib/docker (Dedicated ZFS driver storage for Docker)
-│   ├── cache             -> ~/.cache     (Browser cache, direnv, etc.)
+│   └── var               -> /var         (ephemeral system state)
+│
+├── cache/                                (Tier 2: com.sun:auto-snapshot=false, mountpoint=none)
+│   ├── build             -> ~/.cache     (User application and browser build caches)
 │   ├── cargo             -> ~/.cargo     (Rust toolchains & registry cache)
 │   ├── pnpm              -> ~/.local/share/pnpm (pnpm global store & global CLIs)
 │   ├── bun               -> ~/.bun       (Bun cache & global CLIs)
+│   ├── docker            -> /var/lib/docker (Dedicated ZFS driver storage for Docker)
 │   ├── steam             -> ~/.local/share/Steam (Game binaries)
 │   └── models            -> /data/models (AI weights shared across LLM runtimes)
 │
 └── safe/                                 (com.sun:auto-snapshot=true, mountpoint=none)
-    └── persist           -> /persist     (The single source of truth for all persistent state)
+    ├── host              -> /persist/host (Tier 3: host-bound identity, machine-id, logs)
+    └── user              -> /persist/user (Tier 4: syncable user workspace, documents, dotfiles)
 ```
 
 ---
 
-## 1. ZFS Dataset Tiering
+## 1. Impermanence Architecture
 
-### Problem
-* `com.sun:auto-snapshot = true` was set at the root pool level and inherited by `/var` and `/home`.
-* High-churn data (Steam games, LM Studio models, Docker container layers, caches) locked into 12 months of snapshot history, causing pool exhaustion (96%+ capacity) and system lockups.
+### System State (`/persist/host`)
+* **Machine identity**: `/etc/machine-id`
+* **Host SSH keys**: `/etc/ssh/ssh_host_ed25519_key` (and `.pub`)
+* **Network & VPN state**: `/var/lib/tailscale`, `/var/lib/bluetooth`, `/etc/NetworkManager/system-connections`
+* **System logs and state**: `/var/log`, `/var/lib/nixos`, `/var/lib/systemd`
 
-### First-Principles Solution
-* **Split into `local` vs `safe` parents**:
-  * **`local` (No Snapshots)**: Holds all reproducible, cache, or re-downloadable heavy binaries.
-  * **`safe` (Snapshotted)**: Holds only user code, documents, cryptographic identities, and persistent system configuration.
-* **Pool-Level Default**: `rootFsOptions."com.sun:auto-snapshot" = "false"` ensures no dataset is ever snapshotted unless explicitly placed under `safe/`.
-* **Consistency Across Hosts**: Both **hercules** (striped 2TB pool) and **pegasus** (single 1TB pool) share an identical dataset hierarchy. Empty datasets incur 0 extra storage and ensure uniform module definitions.
-
-### Language Ecosystem Isolation (`cargo`, `pnpm`, `bun`)
-* **Dedicated Un-snapshotted Stores**: Rust (`~/.cargo`), pnpm (`~/.local/share/pnpm`), and Bun (`~/.bun`) reside on dedicated datasets. Global binaries (`pnpm add -g`, `bun add -g`, `cargo install`) survive reboots without polluting snapshots or Restic backups.
-* **Cross-Filesystem Hardlink Fallback**: `pnpm` automatically catches cross-device link boundaries (`EXDEV`) when linking into `~/Repos` (on `safe/persist`) and falls back to standard file copying, preventing package stores from polluting persistent snapshot histories.
+### User State (`/persist/user`)
+* **Core workspace**: `~/Repos`, `~/Documents`, `~/Downloads`, `~/Pictures`
+* **Cryptographic identities**: `~/.ssh`, `~/.gnupg`
+* **Shell history**: `~/.zsh_history`, `~/.bash_history`
+* **Application configurations**: `~/.config/gh`, `~/.config/zed`, `~/.mozilla`, `~/.config/spotify`, `~/.config/google-chrome`, `~/.config/chromium`, `~/.config/ghostty`, `~/.config/Slack`, `~/.local/share/direnv`
 
 ---
 
-## 2. Impermanence (Erase-Your-Darlings)
+## 2. Declarative Cross-Host Synchronization (Syncthing over Tailscale)
 
-### Principle
-* The root filesystem (`/`) is ephemeral and rolled back to a clean `@blank` snapshot in stage-1 initrd on every boot.
-* User home (`/home/tghanken`) is ephemeral; only directories and files explicitly linked under `/persist` survive reboots.
-* Eliminates configuration drift, orphan state, and unused files across reboots.
-
-### Persistent Boundaries
-
-#### System State (`/persist/system`)
-* Machine identity: `/etc/machine-id`
-* Host SSH keys: `/etc/ssh/ssh_host_ed25519_key` (and `.pub`)
-* Network & VPN state: `/var/lib/tailscale`, `/var/lib/bluetooth`, `/etc/NetworkManager/system-connections`
-* System logs and state: `/var/log`, `/var/lib/nixos`, `/var/lib/systemd`
-
-#### User State (`/persist/home/tghanken`)
-* SSH & GPG: `.ssh`, `.gnupg`
-* Development & repositories: `Repos`, `Documents`, `Downloads`, `Pictures`
-* Shell & environments: `.zsh_history`, `.bash_history`, `.local/share/direnv`, `.local/share/zoxide`
-* Essential application configurations: `.config/gh`, `.config/spotify`, `.config/discord`, `.config/google-chrome`, `.thunderbird`
+* **Engine**: Syncthing bound to Tailscale private mesh interfaces (`tailscale0`).
+* **Module-Aware Folder Registration**: Individual feature modules register sync folders into `features.sync.folders`:
+  * `workstation.nix`: Registers `Documents` and `Pictures`.
+  * `development.nix`: Registers selective development folders.
+* **Persistent Identity**: Syncthing keys and databases are persisted under `/persist/user/tghanken/.config/syncthing` and `/persist/user/tghanken/.local/share/syncthing` to avoid device re-pairing across reboots.
 
 ---
 
-## 3. Automated Restic Backups to Cloudflare R2
+## 3. Unified Restic Backups with Global Deduplication
 
-### Principle
-* Because Impermanence forces all essential state into `/persist`, the backup scope is unambiguous: **backing up the machine means backing up `/persist`**.
-* Caches, games, containers, models, and temporary files are completely isolated and never backed up.
+### Single-Repository Best Practice
+* All hosts back up to a **single unified repository** on Cloudflare R2 (`s3:https://<account>.r2.cloudflarestorage.com/<bucket>/nixos`).
+* Restic Content-Defined Chunking (CDC) deduplicates common files globally across all nodes.
 
-### Backup Specifications
-* **Engine**: Native NixOS `services.restic.backups.system`.
-* **Target**: Cloudflare R2 (S3-compatible, zero egress fees):
-  `s3:https://<account-id>.r2.cloudflarestorage.com/<bucket-name>`
-* **Credentials**:
-  * Encryption password: `config.age.secrets.restic_password.path`
-  * S3 environment: `config.age.secrets.restic_r2_env.path` (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`)
-* **Schedule**: Nightly timer (`02:00`) with persistent catch-up.
-* **Pruning**: Retention keeping 7 daily, 4 weekly, and 12 monthly snapshots.
-* **Exclusions**: Standard build outputs and caches (`**/.cache`, `**/target`, `**/node_modules`, `**/.direnv`, `**/.cargo/registry`, `**/.cargo/git`).
+### Tagged Backup Jobs
+1. **`host-state`**:
+   * Path: `/persist/host`
+   * Tag: `host`
+   * Identifier: `--host <hostname>`
+   * Pruning: Only run on the designated primary host (`hercules`) to prevent exclusive repository lock contention.
+2. **`user-state`**:
+   * Path: `/persist/user`
+   * Tag: `user`
+   * Pruning: Coordinated on primary host.
 
----
-
-## Decisions Summary
-
-1. **Root & Home Strategy**: Strict Impermanence (Choice B) for both root and home.
-2. **Disko Alignment**: Declarative layout in [disk-config.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/hercules/disk-config.nix); clean re-image via `nixos-anywhere`.
-3. **AI Models**: Mounted to `/data/models` with LM Studio pointing directly to it (or symlinked from `~/.lmstudio/models`).
-4. **Restic Destination**: Cloudflare R2 object storage.
-5. **Pool Topology (Hercules)**: Striped 2TB pool maintained for maximum gaming and AI model capacity.
+### Bare-Metal Restore Workflow
+During `reimage-host`:
+1. Stage-1 partitions and mounts target datasets (`/mnt/persist/host`, `/mnt/persist/user`).
+2. Stage-2 queries the Restic repository for the latest snapshot tagged `host` for `--host $HOST` and restores it directly to `/mnt`.
+3. Checks for latest `user` snapshots and restores them to `/mnt`.
+4. Stages recovered SSH host keys into `/persist/host/etc/ssh`.

@@ -5,6 +5,7 @@
 }: {
   imports = [
     ../core
+    ../features/sync.nix
   ];
 
   # Workstations (especially laptops) retain auto-upgrade when online
@@ -91,23 +92,36 @@
     age-plugin-yubikey
   ];
 
-  disko.devices.zpool.zroot.datasets."local/cache" = {
+  features.sync = {
+    enable = true;
+    folders = {
+      documents = {
+        path = "/home/tghanken/Documents";
+        id = "user-documents";
+      };
+      pictures = {
+        path = "/home/tghanken/Pictures";
+        id = "user-pictures";
+      };
+    };
+  };
+
+  disko.devices.zpool.zroot.datasets."cache/build" = {
     type = "zfs_fs";
     mountpoint = "/home/tghanken/.cache";
     options."com.sun:auto-snapshot" = "false";
   };
 
-  environment.persistence."/persist" = {
-    directories = [
-      "/var/lib/bluetooth"
-    ];
-    users.tghanken.directories = [
-      ".mozilla"
-      ".config/spotify"
-      ".config/google-chrome"
-      ".config/chromium"
-      ".config/ghostty"
-      ".config/Slack"
-    ];
-  };
+  environment.persistence."/persist/host".directories = [
+    "/var/lib/bluetooth"
+  ];
+
+  environment.persistence."/persist/user".users.tghanken.directories = [
+    ".mozilla"
+    ".config/spotify"
+    ".config/google-chrome"
+    ".config/chromium"
+    ".config/ghostty"
+    ".config/Slack"
+  ];
 }

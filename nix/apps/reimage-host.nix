@@ -31,7 +31,8 @@ in
 
       Idempotently re-images a host while preserving its SSH host identity and
       agenix-rekey decryption capability across full disk wipes. Automatically
-      detects and restores the latest Restic backup into /persist if available.
+      detects and restores the latest Restic backup into /persist/host and
+      /persist/user if available.
 
       Arguments:
         host              Name of the host in self.nixosConfigurations (e.g. arges, hercules)
@@ -41,7 +42,7 @@ in
         --kexec           Enable kexec phase for bootstrapping non-NixOS nodes
                           (equivalent to --phases kexec,disko,install,reboot)
         --phases <p>      Explicit nixos-anywhere phases (default: disko,install,reboot)
-        --no-restore      Do not attempt to restore Restic backups into /persist
+        --no-restore      Do not attempt to restore Restic backups
         --dry-run         Print commands and inspect staged keys without executing
         --debug           Enable bash xtrace and pass --debug to nixos-anywhere
         -h, --help        Show this help message
@@ -224,13 +225,13 @@ in
 
       # Stage keys into standard and impermanence paths
       mkdir -p "$STAGING_DIR/etc/ssh"
-      mkdir -p "$STAGING_DIR/persist/etc/ssh"
+      mkdir -p "$STAGING_DIR/persist/host/etc/ssh"
       cp "$PRIV_KEY" "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key"
       cp "$PUB_KEY" "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub"
-      cp "$PRIV_KEY" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key"
-      cp "$PUB_KEY" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key.pub"
-      chmod 600 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key"
-      chmod 644 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub" "$STAGING_DIR/persist/etc/ssh/ssh_host_ed25519_key.pub"
+      cp "$PRIV_KEY" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key"
+      cp "$PUB_KEY" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key.pub"
+      chmod 600 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key"
+      chmod 644 "$STAGING_DIR/etc/ssh/ssh_host_ed25519_key.pub" "$STAGING_DIR/persist/host/etc/ssh/ssh_host_ed25519_key.pub"
 
       echo "==> Staged SSH host keys in $STAGING_DIR"
 
@@ -244,7 +245,7 @@ in
         echo "==> Host $HOST has features.backup enabled ($BACKUP_REPO)."
         echo "==> Executing phased re-imaging with automated Restic restore..."
 
-        # Step 1: Disko phase (partition and mount /mnt/persist)
+        # Step 1: Disko phase (partition and mount target datasets)
         DISKO_PHASES="disko"
         if [[ "$PHASES" == *"kexec"* ]]; then
           DISKO_PHASES="kexec,disko"
@@ -266,7 +267,7 @@ in
           "''${DISKO_CMD[@]}"
         fi
 
-        # Step 2: Restic restore into /mnt/persist
+        # Step 2: Restic restore into /mnt
         RESTIC_PASSWORD_FILE="nix/core/secrets/secret_files/restic_password.age"
         RESTIC_PW=""
         if [ -f "$RESTIC_PASSWORD_FILE" ]; then
@@ -274,15 +275,22 @@ in
         fi
 
         if [ "$DRY_RUN" = true ]; then
-          echo "==> [DRY RUN] Step 2 (Restore): Would check $BACKUP_REPO for snapshots and restore to /mnt/persist"
+          echo "==> [DRY RUN] Step 2 (Restore): Would check $BACKUP_REPO for snapshots and restore to /mnt"
         elif [ -n "$RESTIC_PW" ]; then
-          echo "==> Checking for existing Restic snapshots in $BACKUP_REPO..."
-          if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --json >/dev/null 2>&1; then
-            echo "==> Found snapshots! Restoring latest snapshot into /mnt/persist..."
-            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --target /mnt/persist
-            echo "==> Restic restore complete."
+          echo "==> Checking for existing host snapshots for $HOST in $BACKUP_REPO..."
+          if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --host "$HOST" --tag host --json >/dev/null 2>&1; then
+            echo "==> Found host snapshots! Restoring latest host snapshot into /mnt..."
+            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --host "$HOST" --tag host --target /mnt
+            echo "==> Host state restore complete."
           else
-            echo "==> No snapshots found in $BACKUP_REPO. Continuing with fresh /persist."
+            echo "==> No host snapshots found for $HOST in $BACKUP_REPO. Continuing with fresh /persist/host."
+          fi
+
+          echo "==> Checking for user snapshots in $BACKUP_REPO..."
+          if RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" snapshots --tag user --json >/dev/null 2>&1; then
+            echo "==> Found user snapshots! Restoring latest user snapshot into /mnt..."
+            RESTIC_PASSWORD="$RESTIC_PW" restic -r "$BACKUP_REPO" restore latest --tag user --target /mnt || true
+            echo "==> User state restore complete."
           fi
         fi
 

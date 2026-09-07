@@ -21,7 +21,7 @@
     rocmPackages.clr.icd
   ];
 
-  disko.devices.zpool.zroot.datasets."local/models" = {
+  disko.devices.zpool.zroot.datasets."cache/models" = {
     type = "zfs_fs";
     mountpoint = "/data/models";
     options."com.sun:auto-snapshot" = "false";

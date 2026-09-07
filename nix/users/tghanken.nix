@@ -62,7 +62,7 @@ in {
     programs.home-manager.enable = true;
   };
 
-  environment.persistence."/persist".users.tghanken = {
+  environment.persistence."/persist/user".users.tghanken = {
     directories = [
       "Documents"
       "Downloads"

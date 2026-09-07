@@ -231,6 +231,13 @@
             mountpoint = "/var";
             options."com.sun:auto-snapshot" = "false";
           };
+          cache = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              "com.sun:auto-snapshot" = "false";
+            };
+          };
           safe = {
             type = "zfs_fs";
             options = {
@@ -238,9 +245,14 @@
               "com.sun:auto-snapshot" = "true";
             };
           };
-          "safe/persist" = {
+          "safe/host" = {
             type = "zfs_fs";
-            mountpoint = "/persist";
+            mountpoint = "/persist/host";
+            options."com.sun:auto-snapshot" = "true";
+          };
+          "safe/user" = {
+            type = "zfs_fs";
+            mountpoint = "/persist/user";
             options."com.sun:auto-snapshot" = "true";
           };
         };

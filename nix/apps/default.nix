@@ -17,6 +17,11 @@
       lib = inputs.nixpkgs.lib;
     };
 
+    ingestSyncthingIdsPkg = import ./ingest-syncthing-ids.nix {
+      inherit pkgs;
+      lib = inputs.nixpkgs.lib;
+    };
+
     updateDiskLayoutsPkg = import ./update-disk-layouts.nix {
       inherit pkgs;
       inherit (config) self;
@@ -25,6 +30,7 @@
     packages = {
       reimage-host = reimageHostPkg;
       ingest-host-keys = ingestHostKeysPkg;
+      ingest-syncthing-ids = ingestSyncthingIdsPkg;
       update-disk-layouts = updateDiskLayoutsPkg;
     };
 
@@ -36,6 +42,10 @@
       ingest-host-keys = {
         type = "app";
         program = "${ingestHostKeysPkg}/bin/ingest-host-keys";
+      };
+      ingest-syncthing-ids = {
+        type = "app";
+        program = "${ingestSyncthingIdsPkg}/bin/ingest-syncthing-ids";
       };
       update-disk-layouts = {
         type = "app";

@@ -51,7 +51,7 @@ in {
     };
 
     # Ensure repository directory is persisted if impermanence is active
-    environment.persistence."/persist" = mkIf (config.services ? impermanence && config.services.impermanence.enable) {
+    environment.persistence."/persist/host" = mkIf (config.services ? impermanence && config.services.impermanence.enable) {
       directories = [
         cfg.dataDir
       ];
