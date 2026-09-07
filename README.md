@@ -53,27 +53,27 @@ Create `nix/hosts/<hostname>/default.nix`:
 
   networking.hostId = "<8-hex-chars>"; # e.g. head -c 8 /etc/machine-id
   system.stateVersion = "25.11";
+
+  # Storage: specify target disk device(s)
+  storage.disks = [
+    "/dev/disk/by-id/..."
+  ];
+
+  # Optional swap overrides (defaults are automatically derived from role):
+  # storage.swap = {
+  #   zfsEnd = "-58G";
+  #   encryptedSize = "8G";
+  # };
 }
 ```
 
-### 2. Register in Fleet Matrix
+> [!TIP]
+>
+> - **Zero Registration Boilerplate:** Any directory in `nix/hosts/` with a `default.nix` is **automatically discovered** and added to `nixosConfigurations` and `colmena`.
+> - **Role-Informed Layouts:** `roles/workstation.nix` and `roles/server.nix` automatically set `storage.role` and Colmena tags (`@workstation`, `@server`, `@server-local`, `@server-remote`).
+> - **Remote VMs:** If `roles.server.qemu = true` is set, `storage.role` automatically becomes `"server-remote"` and `storage.disks` defaults to `["/dev/vda"]` (no `storage` block required).
 
-In [nix/hosts/default.nix](file:///home/tghanken/Repos/os/nixos-config/nix/hosts/default.nix), register the host in the `hosts` attribute set:
-
-```nix
-<hostname> = {
-  hostName = "<hostname>";
-  hostModule = ./<hostname>;
-  diskRole = "server-local"; # "workstation" | "server-local" | "server-remote"
-  disks = [ "/dev/disk/by-id/..." ];
-  swap = {
-    zfsEnd = "-4G";
-    encryptedSize = "4G";
-  };
-};
-```
-
-### 3. Generate Disk Layout Contract
+### 2. Generate Disk Layout Contract
 
 Run:
 
@@ -83,7 +83,7 @@ just update-disk-layouts # or: just udl
 
 This generates `nix/hosts/<hostname>/disk-layout.json`, which CI checks against during `nix flake check`.
 
-### 4. Deploy via `reimage-host`
+### 3. Deploy via `reimage-host`
 
 If bootstrapping a bare-metal machine or non-NixOS live image:
 
@@ -169,6 +169,9 @@ just deploy <hostname>   # Deploys to a specific host (e.g. just deploy arges)
 just deploy-all          # Deploys to all fleet nodes
 just deploy-dry          # Builds closures locally without pushing to targets
 ```
+
+> [!NOTE]
+> Node deployment tags (`@server`, `@server-local`, `@server-remote`, `@workstation`) and connection targets are automatically populated based on `storage.role` and host directory names. Target overrides can also be set via `TARGET_HOST_<name>` environment variables.
 
 ### Cross-Host Synchronization (Syncthing over Tailscale)
 
