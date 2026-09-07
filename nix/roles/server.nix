@@ -11,6 +11,7 @@
 
   config = lib.mkMerge [
     {
+      features.backup.enable = lib.mkDefault true;
       storage.role = lib.mkDefault (
         if config.roles.server.qemu
         then "server-remote"

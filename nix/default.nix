@@ -23,6 +23,7 @@
       backup = ./features/backup.nix;
       development = ./features/development.nix;
       gaming = ./features/gaming.nix;
+      sync = ./features/sync.nix;
     };
     users = {
       tghanken = ./users/tghanken.nix;

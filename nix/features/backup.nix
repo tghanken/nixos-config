@@ -6,6 +6,28 @@
 }: let
   inherit (lib) mkEnableOption mkOption mkIf types;
   cfg = config.features.backup;
+  secretsDir = ../core/secrets/secret_files;
+  hasResticPassword = builtins.pathExists (secretsDir + "/restic_password.age");
+  hasResticR2Env = builtins.pathExists (secretsDir + "/restic_r2_env.age");
+
+  hasTier3 =
+    (config.environment.persistence ? "/persist/host")
+    && (
+      (config.environment.persistence."/persist/host".directories or [])
+      != []
+      || (config.environment.persistence."/persist/host".files or []) != []
+    );
+
+  hasTier4 =
+    (config.environment.persistence ? "/persist/user")
+    && (
+      (config.environment.persistence."/persist/user".directories or [])
+      != []
+      || (config.environment.persistence."/persist/user".files or []) != []
+      || (config.environment.persistence."/persist/user".users or {}) != {}
+    );
+
+  hasTier3Or4 = hasTier3 || hasTier4;
 in {
   options.features.backup = {
     enable = mkEnableOption "Declarative Restic backup client";
@@ -16,9 +38,26 @@ in {
       description = "Backup target type ('r2' for Cloudflare S3, 'rest' for self-hosted REST server, 'custom' for arbitrary repository URI).";
     };
 
+    r2 = {
+      accountId = mkOption {
+        type = types.str;
+        default = "";
+        description = "Cloudflare account ID for R2 storage.";
+      };
+
+      bucket = mkOption {
+        type = types.str;
+        default = "";
+        description = "Cloudflare R2 bucket name.";
+      };
+    };
+
     repository = mkOption {
       type = types.str;
-      default = "";
+      default =
+        if cfg.backend == "r2" && cfg.r2.accountId != "" && cfg.r2.bucket != ""
+        then "s3:https://${cfg.r2.accountId}.r2.cloudflarestorage.com/${cfg.r2.bucket}/nixos"
+        else "";
       description = "Restic repository URL (e.g. s3:https://<account>.r2.cloudflarestorage.com/<bucket> or rest:http://<host>:8000/<repo>).";
     };
 
@@ -123,57 +162,130 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.repository != "";
-        message = "features.backup.repository must not be empty when enabled";
-      }
-      {
-        assertion = cfg.passwordFile != null;
-        message = "features.backup.passwordFile must be set when enabled";
-      }
-    ];
+  config = lib.mkMerge [
+    {
+      assertions = [
+        {
+          assertion = !hasTier3Or4 || cfg.enable;
+          message = ''
+            Host '${config.networking.hostName}' includes modules declaring Tier 3 (/persist/host) or Tier 4 (/persist/user) persistent storage, so features.backup must be enabled!
+          '';
+        }
+        {
+          assertion = !cfg.enable || hasResticPassword;
+          message = ''
+            Host '${config.networking.hostName}' has features.backup enabled (required by Tier 3/4 storage), but the repository encryption password secret is missing!
+            Required secret file:
+              - nix/core/secrets/secret_files/restic_password.age
+            Please create the secret before building:
+              just edit-secret restic_password
+              just rekey-secrets
+          '';
+        }
+        {
+          assertion = !cfg.enable || cfg.backend != "r2" || hasResticR2Env;
+          message = ''
+            Host '${config.networking.hostName}' has features.backup enabled with backend = 'r2', but Cloudflare R2 credentials secret is missing!
+            Required secret file:
+              - nix/core/secrets/secret_files/restic_r2_env.age
+            Please create the secret with AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+              just edit-secret restic_r2_env
+              just rekey-secrets
+          '';
+        }
+      ];
+    }
+    (mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = cfg.repository != "";
+          message = ''
+            Host '${config.networking.hostName}' has features.backup enabled, but features.backup.repository is empty!
+            Configure either:
+              features.backup.repository = "s3:https://<account>.r2.cloudflarestorage.com/<bucket>/nixos";
+            or:
+              features.backup.r2.accountId = "<account-id>";
+              features.backup.r2.bucket = "<bucket-name>";
+          '';
+        }
+        {
+          assertion = !(lib.hasInfix "<account>" cfg.repository || lib.hasInfix "<bucket>" cfg.repository);
+          message = "Host '${config.networking.hostName}' has placeholder tokens ('<account>' or '<bucket>') in features.backup.repository ('${cfg.repository}')!";
+        }
+        {
+          assertion = cfg.backend != "r2" || lib.hasPrefix "s3:" cfg.repository;
+          message = "Host '${config.networking.hostName}' has features.backup.backend = 'r2', but features.backup.repository does not start with 's3:' ('${cfg.repository}')!";
+        }
+        {
+          assertion = cfg.backend != "r2" || cfg.environmentFile != null;
+          message = ''
+            Host '${config.networking.hostName}' has features.backup.backend = 'r2', but features.backup.environmentFile is null!
+            Cloudflare R2 requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+            Create the secret with:
+              just edit-secret restic_r2_env
+              just rekey-secrets
+          '';
+        }
+        {
+          assertion = cfg.passwordFile != null;
+          message = ''
+            Host '${config.networking.hostName}' has features.backup enabled, but features.backup.passwordFile is null!
+            Create the encryption password secret with:
+              just edit-secret restic_password
+              just rekey-secrets
+          '';
+        }
+      ];
 
-    environment.systemPackages = [pkgs.restic];
-
-    services.restic.backups = {
-      # Tier 3: Host Persistent State Backup
-      host-state = {
-        inherit (cfg) repository;
-        inherit (cfg) passwordFile;
-        inherit (cfg) environmentFile;
-        inherit (cfg) timerConfig;
-        inherit (cfg) paths;
-        extraBackupArgs = ["--tag" "host" "--exclude-caches"] ++ cfg.extraBackupArgs;
-        pruneOpts =
-          if cfg.isPrimary
-          then cfg.pruneOpts
-          else [];
-        initialize = true;
+      age.secrets = {
+        restic_password = mkIf hasResticPassword {
+          rekeyFile = secretsDir + "/restic_password.age";
+        };
+        restic_r2_env = mkIf hasResticR2Env {
+          rekeyFile = secretsDir + "/restic_r2_env.age";
+        };
       };
 
-      # Tier 4: User Persistent State Backup (when /persist/user is mounted)
-      user-state = mkIf (cfg.backupUser && (config.fileSystems ? "/persist/user")) {
-        inherit (cfg) repository;
-        inherit (cfg) passwordFile;
-        inherit (cfg) environmentFile;
-        timerConfig = cfg.userTimerConfig;
-        paths = cfg.userPaths;
-        inherit (cfg) exclude;
-        extraBackupArgs = ["--tag" "user" "--exclude-caches"] ++ cfg.extraBackupArgs;
-        pruneOpts =
-          if cfg.isPrimary
-          then [
-            "--group-by"
-            "paths"
-            "--keep-daily 7"
-            "--keep-weekly 4"
-            "--keep-monthly 12"
-          ]
-          else [];
-        initialize = true;
+      environment.systemPackages = [pkgs.restic];
+
+      services.restic.backups = {
+        # Tier 3: Host Persistent State Backup
+        host-state = {
+          inherit (cfg) repository;
+          inherit (cfg) passwordFile;
+          inherit (cfg) environmentFile;
+          inherit (cfg) timerConfig;
+          inherit (cfg) paths;
+          extraBackupArgs = ["--tag" "host" "--exclude-caches"] ++ cfg.extraBackupArgs;
+          pruneOpts =
+            if cfg.isPrimary
+            then cfg.pruneOpts
+            else [];
+          initialize = true;
+        };
+
+        # Tier 4: User Persistent State Backup (when /persist/user is mounted)
+        user-state = mkIf (cfg.backupUser && (config.fileSystems ? "/persist/user")) {
+          inherit (cfg) repository;
+          inherit (cfg) passwordFile;
+          inherit (cfg) environmentFile;
+          timerConfig = cfg.userTimerConfig;
+          paths = cfg.userPaths;
+          inherit (cfg) exclude;
+          extraBackupArgs = ["--tag" "user" "--exclude-caches"] ++ cfg.extraBackupArgs;
+          pruneOpts =
+            if cfg.isPrimary
+            then [
+              "--group-by"
+              "paths"
+              "--keep-daily 7"
+              "--keep-weekly 4"
+              "--keep-monthly 12"
+            ]
+            else [];
+          initialize = true;
+        };
       };
-    };
-  };
+    })
+  ];
 }

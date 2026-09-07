@@ -6,6 +6,8 @@
     ./impermanence.nix
     ./secrets
     ./storage.nix
+    ../features/backup.nix
+    ../features/sync.nix
   ];
 
   # GitHub PAT for Nix rate limits
@@ -25,6 +27,11 @@
       fi
     '';
     deps = ["agenix"];
+  };
+
+  config.features.backup.r2 = {
+    accountId = "ecf2d0cc2eba1847c713428ff3f8d616";
+    bucket = "nixos-config-backups";
   };
 
   config.nix.extraOptions = ''

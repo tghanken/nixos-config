@@ -49,6 +49,21 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !cfg.enable || config.fileSystems ? "${cfg.hostPersistPath}";
+        message = "Impermanence is enabled on '${config.networking.hostName}', but hostPersistPath '${cfg.hostPersistPath}' is not defined in fileSystems. Persistent state would be written to ephemeral root and lost on reboot!";
+      }
+      {
+        assertion = !cfg.enable || !builtins.hasAttr "${cfg.userPersistPath}" config.environment.persistence || config.fileSystems ? "${cfg.userPersistPath}";
+        message = "User persistence is configured under '${cfg.userPersistPath}' on '${config.networking.hostName}', but that mount point is not defined in fileSystems!";
+      }
+      {
+        assertion = !cfg.rollback.enable || cfg.rollback.rootDataset != "";
+        message = "Impermanence rollback is enabled on '${config.networking.hostName}', but rollback.rootDataset is empty!";
+      }
+    ];
+
     # In systemd stage-1, roll back root dataset before mounting sysroot
     boot.initrd.systemd.services.initrd-rollback = mkIf cfg.rollback.enable {
       description = "Rollback ZFS root dataset to @blank";

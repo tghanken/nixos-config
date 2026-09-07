@@ -293,9 +293,19 @@ in
 
         # Step 2: Restic restore into /mnt
         RESTIC_PASSWORD_FILE="nix/core/secrets/secret_files/restic_password.age"
+        RESTIC_ENV_FILE="nix/core/secrets/secret_files/restic_r2_env.age"
         RESTIC_PW=""
         if [ -f "$RESTIC_PASSWORD_FILE" ]; then
           RESTIC_PW=$(rage -d -i "$HOME/.ssh/id_ed25519" "$RESTIC_PASSWORD_FILE" 2>/dev/null || true)
+        fi
+
+        if [ -f "$RESTIC_ENV_FILE" ]; then
+          RESTIC_ENV_CONTENT=$(rage -d -i "$HOME/.ssh/id_ed25519" "$RESTIC_ENV_FILE" 2>/dev/null || true)
+          if [ -n "$RESTIC_ENV_CONTENT" ]; then
+            set -a
+            eval "$RESTIC_ENV_CONTENT"
+            set +a
+          fi
         fi
 
         if [ "$DRY_RUN" = true ]; then

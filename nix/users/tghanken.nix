@@ -1,4 +1,8 @@
-{lib, ...}: let
+{
+  lib,
+  config,
+  ...
+}: let
   email = "tghanken@gmail.com";
   name = "Taylor Hanken";
 in {
@@ -62,7 +66,7 @@ in {
     programs.home-manager.enable = true;
   };
 
-  environment.persistence."/persist/user".users.tghanken = {
+  environment.persistence."/persist/user".users.tghanken = lib.mkIf (config.storage.role == "workstation") {
     directories = [
       "Documents"
       "Downloads"

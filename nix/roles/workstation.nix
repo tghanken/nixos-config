@@ -5,7 +5,6 @@
 }: {
   imports = [
     ../core
-    ../features/sync.nix
   ];
 
   # Storage role
@@ -95,8 +94,10 @@
     age-plugin-yubikey
   ];
 
+  features.backup.enable = lib.mkDefault true;
+
   features.sync = {
-    enable = true;
+    enable = lib.mkDefault true;
     folders = {
       documents = {
         path = "/home/tghanken/Documents";

@@ -26,8 +26,19 @@
       then lib.strings.trim (builtins.readFile hostPubkeyPath)
       else null;
 
-    rekeyModule = lib.optionalAttrs (resolvedHostPubkey != null) {
-      age.rekey.hostPubkey = resolvedHostPubkey;
+    rekeyModule = {
+      assertions = [
+        {
+          assertion = resolvedHostPubkey != null;
+          message = ''
+            Host '${hostName}' is missing SSH host public key for agenix-rekey!
+            Expected key at: ${toString hostPubkeyPath}
+            Please generate or import the host key:
+              ssh-keyscan <host> > nix/hosts/${hostName}/key.pub
+          '';
+        }
+      ];
+      age.rekey.hostPubkey = lib.mkIf (resolvedHostPubkey != null) resolvedHostPubkey;
     };
 
     # Legacy disk configuration fallback

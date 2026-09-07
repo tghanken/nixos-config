@@ -39,10 +39,20 @@ in {
     };
   };
 
-  config = lib.mkIf (config.storage.disks != []) {
-    disko.devices = diskoLib.mkDiskLayout {
-      inherit (config.storage) role disks;
-      swap = lib.filterAttrs (_: v: v != null) config.storage.swap;
-    };
-  };
+  config = lib.mkMerge [
+    {
+      assertions = [
+        {
+          assertion = config.storage.disks != [] || (config.disko.devices ? disk && config.disko.devices.disk != {});
+          message = "storage.disks must be specified (or disko.devices.disk configured) for host '${config.networking.hostName}'";
+        }
+      ];
+    }
+    (lib.mkIf (config.storage.disks != []) {
+      disko.devices = diskoLib.mkDiskLayout {
+        inherit (config.storage) role disks;
+        swap = lib.filterAttrs (_: v: v != null) config.storage.swap;
+      };
+    })
+  ];
 }
