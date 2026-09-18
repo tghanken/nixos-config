@@ -27,10 +27,10 @@ services.github-runner-containers.runners = [
 
 For index `i` in `1..num` (zero-padded to 2 digits):
 
-| Field | Pattern | Example |
-|---|---|---|
-| GitHub runner name | `{owner}-{repo}-{hostname}-{ii}` | `tghanken-nixos-config-hercules-01` |
-| systemd / state key | `{owner}-{repo}-{ii}` (sanitized) | `tghanken-nixos_config-01` |
+| Field               | Pattern                           | Example                             |
+| ------------------- | --------------------------------- | ----------------------------------- |
+| GitHub runner name  | `{owner}-{repo}-{hostname}-{ii}`  | `tghanken-nixos-config-hercules-01` |
+| systemd / state key | `{owner}-{repo}-{ii}` (sanitized) | `tghanken-nixos_config-01`          |
 
 Suffix is always present (including `num = 1`) so naming stays uniform.
 

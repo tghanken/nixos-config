@@ -6,7 +6,6 @@
     # Nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-lib.url = "github:nix-community/nixpkgs.lib";
     systems.url = "github:nix-systems/default";
 
     # Determinate Nix
@@ -16,18 +15,13 @@
     };
 
     # Flake utilities
-    blueprint = {
-      url = "github:numtide/blueprint";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.systems.follows = "systems";
-    };
     devshell = {
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs-lib";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -43,7 +37,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
     };
-    agenix-template.url = "github:jhillyerd/agenix-template/1.0.0";
+    agenix-rekey = {
+      url = "github:oddlama/agenix-rekey";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -56,8 +54,7 @@
       url = "github:nix-community/nixos-anywhere";
       inputs.disko.follows = "disko";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
-      inputs.nixos-stable.follows = "nixpkgs";
-      inputs.treefmt-nix.follows = "treefmt-nix";
+      inputs.nixos-stable.follows = "";
     };
     nixos-facter-modules = {
       url = "github:numtide/nixos-facter-modules";
@@ -66,13 +63,17 @@
       url = "github:NixOS/nixos-hardware";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    impermanence = {
+      url = "github:nix-community/impermanence";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
 
     # Nix Utilities
     nix-fast-build = {
       url = "github:Mic92/nix-fast-build";
       inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.treefmt-nix.follows = "treefmt-nix";
     };
 
     niks3 = {
@@ -84,33 +85,16 @@
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.systems.follows = "systems";
-      inputs.treefmt-nix.follows = "treefmt-nix";
       inputs.flake-parts.follows = "flake-parts";
     };
   };
 
-  # Load the blueprint
-  outputs = inputs: let
-    blueprint = inputs.blueprint {
-      inherit inputs;
-      prefix = "nix/";
-      # Only support systems that have at least one host
+  outputs = inputs @ {flake-parts, ...}:
+    flake-parts.lib.mkFlake {inherit inputs;} {
       systems = ["x86_64-linux"];
-    };
-
-    # Blueprint leaves modules that take args beyond flake/inputs as store
-    # paths. `nix flake check` requires nixosModules/homeModules to be
-    # functions or attrsets, so import those leftovers only (do not remap
-    # blueprint.modules — duplicate imports break option uniqueness).
-    ensureModule = module:
-      if builtins.isPath module || builtins.isString module
-      then import module
-      else module;
-    mapModules = builtins.mapAttrs (_: ensureModule);
-  in
-    blueprint
-    // {
-      nixosModules = mapModules blueprint.nixosModules;
-      homeModules = mapModules blueprint.homeModules;
+      imports = [
+        inputs.agenix-rekey.flakeModule
+        ./nix
+      ];
     };
 }
